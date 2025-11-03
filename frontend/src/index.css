@@ -1,0 +1,44 @@
+@import 'tailwindcss';
+
+@font-face {
+      font-family: 'Baloo Thambi';
+      src: url('../public/font/BalooThambi-Regular.ttf');
+}
+#root {
+      width: 100%;
+      height: 100%;
+}
+
+:root,
+#root {
+      font-family: 'Baloo Thambi', system-ui, Avenir, Helvetica, Arial, sans-serif;
+      line-height: 1;
+      font-weight: 400;
+
+      color-scheme: light dark;
+      background-image: url('./assets/background.png');
+      background-color: #11676a;
+      background-size: cover;
+
+      color: #083335;
+
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+      font-weight: 500;
+      text-decoration: inherit;
+}
+
+body {
+      margin: 0;
+      display: flex;
+      place-items: center;
+      min-width: 320px;
+      min-height: 100vh;
+      width: 100vw;
+      height: 100vh;
+}
