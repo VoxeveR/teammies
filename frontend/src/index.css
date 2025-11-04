@@ -4,6 +4,14 @@
       font-family: 'Baloo Thambi';
       src: url('../public/font/BalooThambi-Regular.ttf');
 }
+
+@theme {
+      --color-quiz-dark-green: #083335;
+      --color-quiz-green: #11676a;
+      --color-quiz-white: #caf5f7;
+      --color-quiz-light-green: #1cabb0;
+}
+
 #root {
       width: 100%;
       height: 100%;
