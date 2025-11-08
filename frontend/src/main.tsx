@@ -3,14 +3,15 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.tsx';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import Quiz from './pages/Quiz.tsx';
+import QuizPage from './pages/QuizPage.tsx';
 //import QuizJoin from './pages/QuizJoin.tsx';
 import ErrorPage from './pages/ErrorPage.tsx';
 import Navbar from './components/general/Navbar.tsx';
 import { Suspense } from 'react';
 import React from 'react';
+import WaitingPage from './pages/WaitingPage.tsx';
 
-const QuizJoin = React.lazy(() => import('./pages/QuizJoin.tsx'));
+const QuizJoinPage = React.lazy(() => import('./pages/QuizJoinPage.tsx'));
 
 const exampleNavbar = [
       { label: 'Main', linkTo: '/' },
@@ -33,11 +34,11 @@ const router = createBrowserRouter([
                   },
                   {
                         path: 'quiz',
-                        element: <Quiz />,
+                        element: <QuizPage />,
                   },
                   {
                         path: 'join',
-                        element: <QuizJoin />,
+                        element: <QuizJoinPage />,
                   },
                   {
                         path: 'navbar',
@@ -45,8 +46,20 @@ const router = createBrowserRouter([
                   },
                   {
                         path: 'test-suspense',
-                        element: <Suspense fallback={<div>Loading...</div>}><QuizJoin /></Suspense>
-                  }
+                        element: <Suspense fallback={<div>Loading...</div>}><QuizJoinPage /></Suspense>
+                  },
+                  {
+                        path: 'waiting',
+                        element: <WaitingPage></WaitingPage>
+                  },
+                  {
+                        path: 'login',
+                        element: <div>Login Page</div>,
+                  },
+                  {
+                        path: 'register',
+                        element: <div>Register Page</div>,
+                  },
             ],
       },
 ]);

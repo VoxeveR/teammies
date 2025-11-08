@@ -1,4 +1,4 @@
-function QuizJoin() {
+function QuizJoinPage() {
       return (
             <div className='flex h-full w-full items-center justify-center overflow-hidden lg:opacity-75'>
                   <div className='h-full w-full rounded-[30px] bg-[#CAF5F7] p-6 lg:h-75 lg:w-175'>
@@ -11,4 +11,4 @@ function QuizJoin() {
       );
 }
 
-export default QuizJoin;
+export default QuizJoinPage;

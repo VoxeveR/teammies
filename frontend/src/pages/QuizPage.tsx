@@ -9,7 +9,7 @@ interface QuestionData {
       showAnswer?: boolean;
 }
 
-function Quiz() {
+function QuizPage() {
       const mockedQuestion: QuestionData = {
             id: 1,
             question: 'What is the capital of France France France France France France France France France France France France France France France France France France France?',
@@ -28,4 +28,4 @@ function Quiz() {
       );
 }
 
-export default Quiz;
+export default QuizPage;
