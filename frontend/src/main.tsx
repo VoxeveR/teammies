@@ -4,13 +4,17 @@ import './index.css';
 import App from './App.tsx';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import Quiz from './pages/Quiz.tsx';
-import QuizJoin from './pages/QuizJoin.tsx';
+//import QuizJoin from './pages/QuizJoin.tsx';
 import ErrorPage from './pages/ErrorPage.tsx';
 import Navbar from './components/general/Navbar.tsx';
+import { Suspense } from 'react';
+import React from 'react';
+
+const QuizJoin = React.lazy(() => import('./pages/QuizJoin.tsx'));
 
 const exampleNavbar = [
-      { label: 'dupa', linkTo: '/' },
-      { label: 'dupa2', linkTo: '/quiz' },
+      { label: 'Main', linkTo: '/' },
+      { label: 'Quiz', linkTo: '/quiz' },
 ];
 
 const router = createBrowserRouter([
@@ -39,12 +43,16 @@ const router = createBrowserRouter([
                         path: 'navbar',
                         element: <Navbar elements={exampleNavbar} />,
                   },
+                  {
+                        path: 'test-suspense',
+                        element: <Suspense fallback={<div>Loading...</div>}><QuizJoin /></Suspense>
+                  }
             ],
       },
 ]);
 
 createRoot(document.getElementById('root')!).render(
-      <StrictMode>
-            <RouterProvider router={router} />
-      </StrictMode>
+            <StrictMode>
+                  <RouterProvider router={router} />
+            </StrictMode>
 );
