@@ -38,12 +38,12 @@ function QuizTimer({ initialTime, onTimeExpired }: QuizTimerProps) {
       }, [timeRemaining, onTimeExpired]);
 
       return (
-            <div className='w-full p-12'>
-                  <div className='bg-quiz-green relative h-12 w-full overflow-hidden rounded-[30px]'>
+            <div className='w-full'>
+                  <div className='bg-quiz-green relative h-6 w-full overflow-hidden rounded-[30px] lg:h-12'>
                         <div className='bg-quiz-dark-green absolute top-0 left-0 h-full transition-[width] duration-1000 ease-linear' style={{ width: `${(timeRemaining / initialTime) * 100}%` }} />
 
                         <div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
-                              <h1 className='text-3xl font-bold text-white tabular-nums'>{timeRemaining}</h1>
+                              <h1 className='text-xl font-bold text-white tabular-nums lg:text-3xl'>{timeRemaining}</h1>
                         </div>
                   </div>
             </div>

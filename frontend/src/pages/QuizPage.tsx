@@ -1,4 +1,5 @@
 import Question from '../components/quiz/Question.tsx';
+import QuizHeader from '../components/quiz/QuizHeader.tsx';
 
 interface QuestionData {
       id: number;
@@ -20,10 +21,14 @@ function QuizPage() {
       };
 
       return (
-            <div className='h-full w-full overflow-x-hidden lg:p-16'>
-                  <div className='h-fit min-h-full w-full items-center justify-center bg-[#CAF5F7] lg:rounded-[30px]'>
-                        <Question question={mockedQuestion} />
-                  </div>
+            <div className='flex h-screen min-h-full flex-col'>
+                  <QuizHeader quizTitle='Geography Quiz' questionNumber={1} questionCount={10} />
+
+                  <main className='w-full flex-1 p-0 lg:overflow-hidden lg:p-8'>
+                        <div className='bg-quiz-white mx-auto flex h-full w-full items-stretch justify-center ps-4 pe-4 pt-1 pb-4 lg:h-full lg:rounded-[30px] lg:p-4'>
+                              <Question question={mockedQuestion} />
+                        </div>
+                  </main>
             </div>
       );
 }
