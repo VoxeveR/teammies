@@ -26,7 +26,7 @@
       color-scheme: light dark;
       background-image: url('./assets/background.png');
       background-color: #11676a;
-      background-size: cover;
+      background-size: contain;
 
       color: #083335;
 
