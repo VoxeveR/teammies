@@ -19,7 +19,7 @@ export default function Navbar({ elements, showMobile = true }: NavbarProps) {
                   <NavLink className='flex items-center' to='/'>
                         <img src='/src/assets/logo.svg' className='h-32 w-32 lg:h-20 lg:w-20' />
                   </NavLink>
-                  <div className='text-3xl'>TEAMMIES</div>
+                  <div className='text-3xl lg:ml-2 lg:text-5xl'>TEAMMIES</div>
                   <div className='flex w-full flex-col'>
                         {showMobile ? (
                               <label htmlFor='toggle' className='flex cursor-pointer items-center justify-center lg:hidden'>
