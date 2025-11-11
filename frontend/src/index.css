@@ -22,7 +22,32 @@
 }
 
 .button {
-      @apply bg-quiz-dark-green text-quiz-white w-full rounded-xl p-3;
+      @apply bg-quiz-dark-green text-quiz-white w-full rounded-xl p-3 transition-shadow transition-transform duration-200 ease-out;
+}
+.button:hover {
+      @apply bg-quiz-light-green scale-105 shadow-lg;
+}
+.button:active {
+      @apply translate-y-1 scale-95;
+}
+
+.button:focus {
+      @apply outline-none; /* removes default outline for all focus events */
+}
+
+.button:focus-visible {
+      @apply ring-quiz-light-green ring-2 ring-offset-2;
+}
+
+/* optional: remove mobile tap highlight */
+.button,
+.button * {
+      -webkit-tap-highlight-color: transparent;
+}
+
+.button,
+.button * {
+      -webkit-tap-highlight-color: transparent;
 }
 
 #root {

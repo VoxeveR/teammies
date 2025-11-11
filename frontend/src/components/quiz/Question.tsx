@@ -63,7 +63,7 @@ function Question({ question, onTimeExpired }: QuestionProps) {
                                     <button
                                           key={index}
                                           onClick={() => handleOptionClick(index)}
-                                          className={`box-border block h-full w-full max-w-full min-w-0 rounded-2xl border p-4 text-start transition-all duration-200 last:mb-2 lg:min-h-50 lg:p-2 ${
+                                          className={`box-border block h-full w-full max-w-full min-w-0 rounded-2xl border p-4 text-start transition-all duration-200 last:mb-2 lg:min-h-36 lg:p-2 ${
                                                 selectedIndex === index
                                                       ? 'scale-103 border-white bg-[#1CABB0] text-white shadow-lg'
                                                       : 'bg-quiz-dark-green border-gray-600 text-white hover:scale-102 hover:bg-[#0a4a4d]'
