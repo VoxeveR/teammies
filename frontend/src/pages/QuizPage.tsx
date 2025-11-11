@@ -20,11 +20,10 @@ function QuizPage() {
       };
 
       return (
-            <div className='h-full w-full overflow-x-hidden lg:ps-24 lg:pe-24 lg:pt-24'>
+            <div className='h-full w-full overflow-x-hidden lg:p-16'>
                   <div className='h-fit min-h-full w-full items-center justify-center bg-[#CAF5F7] lg:rounded-[30px]'>
                         <Question question={mockedQuestion} />
                   </div>
-                  <div className='hidden h-24 lg:block'></div>
             </div>
       );
 }
