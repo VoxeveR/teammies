@@ -11,6 +11,7 @@ import { Suspense } from 'react';
 import React from 'react';
 import WaitingPage from './pages/WaitingPage.tsx';
 import LoginPage from './pages/LoginPage.tsx';
+import RegisterPage from './pages/RegisterPage.tsx';
 
 const QuizJoinPage = React.lazy(() => import('./pages/QuizJoinPage.tsx'));
 
@@ -47,11 +48,15 @@ const router = createBrowserRouter([
                   },
                   {
                         path: 'test-suspense',
-                        element: <Suspense fallback={<div>Loading...</div>}><QuizJoinPage /></Suspense>
+                        element: (
+                              <Suspense fallback={<div>Loading...</div>}>
+                                    <QuizJoinPage />
+                              </Suspense>
+                        ),
                   },
                   {
                         path: 'waiting',
-                        element: <WaitingPage></WaitingPage>
+                        element: <WaitingPage></WaitingPage>,
                   },
                   {
                         path: 'login',
@@ -59,14 +64,14 @@ const router = createBrowserRouter([
                   },
                   {
                         path: 'register',
-                        element: <div>Register Page</div>,
+                        element: <RegisterPage></RegisterPage>,
                   },
             ],
       },
 ]);
 
 createRoot(document.getElementById('root')!).render(
-            <StrictMode>
-                  <RouterProvider router={router} />
-            </StrictMode>
+      <StrictMode>
+            <RouterProvider router={router} />
+      </StrictMode>
 );
