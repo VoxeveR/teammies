@@ -10,6 +10,7 @@ import Navbar from './components/general/Navbar.tsx';
 import { Suspense } from 'react';
 import React from 'react';
 import WaitingPage from './pages/WaitingPage.tsx';
+import LoginPage from './pages/LoginPage.tsx';
 
 const QuizJoinPage = React.lazy(() => import('./pages/QuizJoinPage.tsx'));
 
@@ -54,7 +55,7 @@ const router = createBrowserRouter([
                   },
                   {
                         path: 'login',
-                        element: <div>Login Page</div>,
+                        element: <LoginPage></LoginPage>,
                   },
                   {
                         path: 'register',
