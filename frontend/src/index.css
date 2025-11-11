@@ -5,11 +5,24 @@
       src: url('../public/font/BalooThambi-Regular.ttf');
 }
 
+@font-face {
+      font-family: 'Bungee';
+      src: url('../public/font/Bungee-Regular.ttf');
+}
+
 @theme {
       --color-quiz-dark-green: #083335;
       --color-quiz-green: #11676a;
       --color-quiz-white: #caf5f7;
       --color-quiz-light-green: #1cabb0;
+}
+
+.input {
+      @apply bg-quiz-green text-quiz-white w-full rounded-xl p-2;
+}
+
+.button {
+      @apply bg-quiz-dark-green text-quiz-white w-full rounded-xl p-3;
 }
 
 #root {
