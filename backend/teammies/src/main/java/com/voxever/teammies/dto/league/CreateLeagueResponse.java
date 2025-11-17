@@ -1,4 +1,4 @@
-package com.voxever.teammies.dto;
+package com.voxever.teammies.dto.league;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;

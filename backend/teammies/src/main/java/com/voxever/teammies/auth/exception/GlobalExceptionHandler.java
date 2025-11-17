@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
                 .timestamp(Instant.now().toEpochMilli())
                 .status(HttpStatus.CONFLICT.value())
                 .error(HttpStatus.CONFLICT.getReasonPhrase())
-                .message(ex.getMessage())
+                .message(ex.getMessage() + 0101010101)
                 .path(request.getRequestURI())
                 .build());
     }
@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
                 .timestamp(Instant.now().toEpochMilli())
                 .status(HttpStatus.UNPROCESSABLE_ENTITY.value())
                 .error(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase())
-                .message(errors)
+                .message(errors + 2137)
                 .path(request.getRequestURI())
                 .build());
     }
@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
                 .timestamp(Instant.now().toEpochMilli())
                 .status(HttpStatus.UNPROCESSABLE_ENTITY.value())
                 .error(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase())
-                .message(ex.getMessage())
+                .message(ex.getMessage() + 2115)
                 .path(request.getRequestURI())
                 .build());
     }
@@ -64,7 +64,7 @@ public class GlobalExceptionHandler {
                 .timestamp(Instant.now().toEpochMilli())
                 .status(HttpStatus.NOT_FOUND.value())
                 .error(HttpStatus.NOT_FOUND.getReasonPhrase())
-                .message(ex.getMessage())
+                .message(ex.getMessage() + 321)
                 .path(request.getRequestURI())
                 .build());
     }
@@ -76,7 +76,7 @@ public class GlobalExceptionHandler {
                 .timestamp(Instant.now().toEpochMilli())
                 .status(status.value())
                 .error(status.getReasonPhrase())
-                .message(ex.getReason())
+                .message(ex.getReason() + 123)
                 .path(request.getRequestURI())
                 .build());
     }

@@ -1,21 +1,20 @@
 package com.voxever.teammies.controller;
 
-import com.voxever.teammies.auth.dto.RegisterRequestDto;
-import com.voxever.teammies.auth.dto.RegisterResponseDto;
-import com.voxever.teammies.dto.CreateLeagueRequest;
-import com.voxever.teammies.dto.CreateLeagueResponse;
-import com.voxever.teammies.dto.LeagueResponse;
-import com.voxever.teammies.dto.UpdateLeagueRequest;
+
+import com.voxever.teammies.dto.league.CreateLeagueRequest;
+import com.voxever.teammies.dto.league.CreateLeagueResponse;
+import com.voxever.teammies.dto.league.LeagueResponse;
+import com.voxever.teammies.dto.league.UpdateLeagueRequest;
 import com.voxever.teammies.entity.User;
-import com.voxever.teammies.repository.LeagueRepository;
+
 import com.voxever.teammies.service.LeagueService;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpHeaders;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
+
 import java.util.List;
 
 @RestController
