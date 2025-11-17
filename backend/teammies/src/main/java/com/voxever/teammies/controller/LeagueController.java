@@ -27,8 +27,10 @@ public class LeagueController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<CreateLeagueResponse> createLeague(@RequestHeader(HttpHeaders.AUTHORIZATION) String jwtToken, @RequestBody @Valid CreateLeagueRequest request, @AuthenticationPrincipal User user) {
+    public ResponseEntity<CreateLeagueResponse> createLeague(@RequestBody @Valid CreateLeagueRequest request, @AuthenticationPrincipal User user) {
         return leagueService.createLeague(request, user);
     }
+
+
 
 }

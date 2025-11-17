@@ -7,6 +7,9 @@ import lombok.*;
 @AllArgsConstructor
 public class CreateLeagueResponse {
 
+    @JsonProperty("league_id")
+    private Long leagueId;
+
 
 
 }

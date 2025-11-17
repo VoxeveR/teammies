@@ -22,6 +22,9 @@ public class League {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long leagueId;
 
+    @Column(name = "league_name", nullable = false, unique = true)
+    private String leagueName;
+
     @Column(name = "description")
     private String description;
 
