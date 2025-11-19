@@ -22,7 +22,7 @@ public class JwtService {
     private final String secretKey;
     private final Integer jwtTokenValidityMs;
 
-    public JwtService(@Value("${jwt.secretKey}") String secretKey, @Value("${jwt.token-validity-ms}") Integer jwtTokenValidityMs) {
+    public JwtService(@Value("${jwt.secretKey}") String secretKey, @Value("5000") Integer jwtTokenValidityMs) {
         this.secretKey = secretKey;
         this.jwtTokenValidityMs = jwtTokenValidityMs;
     }

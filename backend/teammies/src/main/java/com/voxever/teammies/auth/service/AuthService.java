@@ -9,6 +9,12 @@ import com.voxever.teammies.auth.repository.UserRepository;
 import com.voxever.teammies.entity.RefreshToken;
 import com.voxever.teammies.entity.Role;
 import com.voxever.teammies.entity.User;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpCookie;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,8 +22,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class AuthService {
@@ -85,7 +94,7 @@ public class AuthService {
         user.setRoles(List.of(userRole));
     }
 
-    public ResponseEntity<JwtResponseDto> authenticate(LoginRequestDto request) {
+    public ResponseEntity<JwtResponseDto> authenticate(LoginRequestDto request, HttpServletResponse response) {
         String email = request.getEmail();
         String password = request.getPassword();
 
@@ -98,33 +107,76 @@ public class AuthService {
         if(user.isPresent()){
             username = user.get().getUsername();
         }
+
+        long maxAgeSeconds = (refreshToken.getExpiresAt().toEpochMilli() - System.currentTimeMillis()) / 1000;
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken.getRawToken())
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("None")
+                .maxAge(maxAgeSeconds)
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
+
         return ResponseEntity.ok()
                 .body(JwtResponseDto.builder()
                         .accessToken(jwtToken)
                         .username(username)
                         .accessTokenType("Bearer")
                         .accessTokenExpiresIn(jwtService.extractExpiration(jwtToken).getTime())
-                        .refreshToken(refreshToken.getRawToken())
-                        .refreshTokenExpiresIn(refreshToken.getExpiresAt().toEpochMilli())
                         .build());
     }
 
-    public ResponseEntity<JwtResponseDto> refreshToken(String token) {
-        RefreshToken newRefreshToken = refreshTokenService.rotateRefreshToken(token);
+    public ResponseEntity<JwtResponseDto> refreshToken(HttpServletRequest servletRequest, HttpServletResponse response) {
+
+        Optional<Cookie> refreshTokenCookie = findRefreshTokenCookie(servletRequest.getCookies());
+
+        if (refreshTokenCookie.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        RefreshToken newRefreshToken = refreshTokenService.rotateRefreshToken(refreshTokenCookie.get().getValue());
         String jwtToken = jwtService.generateToken(newRefreshToken.getUser().getUserId());
+
+        long maxAgeSeconds = (newRefreshToken.getExpiresAt().toEpochMilli() - System.currentTimeMillis()) / 1000;
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", newRefreshToken.getRawToken())
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("None")
+                .maxAge(maxAgeSeconds)
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
 
         return ResponseEntity.ok()
                 .body(JwtResponseDto.builder()
                         .accessToken(jwtToken)
                         .accessTokenType("Bearer")
                         .accessTokenExpiresIn(jwtService.extractExpiration(jwtToken).getTime())
-                        .refreshToken(newRefreshToken.getRawToken())
-                        .refreshTokenExpiresIn(newRefreshToken.getExpiresAt().toEpochMilli())
                         .build());
     }
 
-    public void revokeToken(String token) {
-        refreshTokenService.findAndDelete(token);
+
+    public ResponseEntity<Void> revokeToken(HttpServletRequest servletRequest) {
+
+        Optional<Cookie> refreshTokenCookie = findRefreshTokenCookie(servletRequest.getCookies());
+
+        if (refreshTokenCookie.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        refreshTokenService.findAndDelete(refreshTokenCookie.get().getValue());
+
+        return ResponseEntity.ok().build();
+    }
+
+    private Optional<Cookie> findRefreshTokenCookie(Cookie[] cookies){
+        return Arrays.stream(Optional.ofNullable(cookies)
+                .orElse(new Cookie[0])).filter(cookie -> cookie.getName().equals("refreshToken")).findFirst();
     }
 
     public Optional<User> findByEmail(String email) {
