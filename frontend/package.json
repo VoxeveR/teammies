@@ -15,7 +15,7 @@
     "@fortawesome/react-fontawesome": "^3.1.0",
     "@stomp/stompjs": "^7.1.1",
     "@tailwindcss/vite": "^4.1.16",
-    "axios": "^1.11.0",
+    "axios": "^1.13.2",
     "bootstrap-icons": "^1.13.1",
     "defer": "^1.0.0",
     "flag-icon-css": "^4.1.7",

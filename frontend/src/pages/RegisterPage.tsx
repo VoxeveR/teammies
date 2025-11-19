@@ -2,7 +2,7 @@ import Navbar from '../components/general/Navbar.tsx';
 
 function RegisterPage() {
       return (
-            <div className='flex h-full max-h-screen w-full flex-col overflow-auto'>
+            <div className='flex h-screen max-h-screen w-full flex-col overflow-auto'>
                   <Navbar showMobile={false}></Navbar>
                   <div className='bg-quiz-white flex h-full min-h-fit w-full flex-col pt-15 lg:mx-auto lg:my-auto lg:h-fit lg:w-1/4 lg:min-w-lg lg:rounded-xl lg:bg-none lg:pt-8 lg:pb-8 xl:w-1/5'>
                         <div className='flex w-full flex-col items-center justify-center gap-1'>

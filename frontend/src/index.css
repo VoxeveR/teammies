@@ -17,12 +17,33 @@
       --color-quiz-light-green: #1cabb0;
 }
 
+@layer utilities {
+      .scrollbar::-webkit-scrollbar {
+            width: 15px;
+            height: 15px;
+      }
+
+      .scrollbar::-webkit-scrollbar-track {
+            border-radius: 100vh;
+            background: #1cabb0;
+      }
+
+      .scrollbar::-webkit-scrollbar-thumb {
+            background: #11676a;
+            border-radius: 100vh;
+      }
+
+      .scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #083335;
+      }
+}
+
 .input {
       @apply bg-quiz-green text-quiz-white w-full rounded-xl p-2;
 }
 
 .button {
-      @apply bg-quiz-dark-green text-quiz-white w-full rounded-xl p-3 transition-shadow transition-transform duration-200 ease-out;
+      @apply bg-quiz-dark-green text-quiz-white w-full rounded-xl p-3 transition-shadow duration-200 ease-out;
 }
 .button:hover {
       @apply bg-quiz-light-green scale-105 shadow-lg;
@@ -55,6 +76,7 @@
 body {
       width: 100%;
       min-height: 100vh;
+      height: auto;
 }
 
 :root,
@@ -66,7 +88,7 @@ body {
       color-scheme: light dark;
       background-image: url('./assets/background.png');
       background-color: #11676a;
-      background-size: contain;
+      background-size: cover;
 
       color: #083335;
 

@@ -12,6 +12,9 @@ import React from 'react';
 import WaitingPage from './pages/WaitingPage.tsx';
 import LoginPage from './pages/LoginPage.tsx';
 import RegisterPage from './pages/RegisterPage.tsx';
+import TeamPage from './pages/TeamPage.tsx';
+import LeagueManagementPage from './pages/LeagueManagementPage.tsx';
+import { AuthProvider } from './hooks/useAuth.tsx';
 
 const QuizJoinPage = React.lazy(() => import('./pages/QuizJoinPage.tsx'));
 
@@ -66,12 +69,26 @@ const router = createBrowserRouter([
                         path: 'register',
                         element: <RegisterPage></RegisterPage>,
                   },
+                  {
+                        path: 'team',
+                        element: <TeamPage></TeamPage>,
+                  },
+                  {
+                        path: 'leagues',
+                        element: (
+                              <>
+                                    <LeagueManagementPage></LeagueManagementPage>
+                              </>
+                        ),
+                  },
             ],
       },
 ]);
 
 createRoot(document.getElementById('root')!).render(
       <StrictMode>
-            <RouterProvider router={router} />
+            <AuthProvider>
+                  <RouterProvider router={router} />
+            </AuthProvider>
       </StrictMode>
 );
