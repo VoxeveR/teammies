@@ -4,6 +4,7 @@ package com.voxever.teammies.auth.exception;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.voxever.teammies.auth.dto.ErrorResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -26,7 +27,7 @@ public class GlobalExceptionHandler {
                 .timestamp(Instant.now().toEpochMilli())
                 .status(HttpStatus.CONFLICT.value())
                 .error(HttpStatus.CONFLICT.getReasonPhrase())
-                .message(ex.getMessage() + 0101010101)
+                .message(ex.getMessage())
                 .path(request.getRequestURI())
                 .build());
     }
@@ -34,14 +35,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponseDto> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
         String errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .map(DefaultMessageSourceResolvable::getDefaultMessage)
                 .collect(Collectors.joining("; "));
 
         return ResponseEntity.unprocessableEntity().body(ErrorResponseDto.builder()
                 .timestamp(Instant.now().toEpochMilli())
                 .status(HttpStatus.UNPROCESSABLE_ENTITY.value())
                 .error(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase())
-                .message(errors + 2137)
+                .message(errors)
                 .path(request.getRequestURI())
                 .build());
     }
@@ -52,7 +53,7 @@ public class GlobalExceptionHandler {
                 .timestamp(Instant.now().toEpochMilli())
                 .status(HttpStatus.UNPROCESSABLE_ENTITY.value())
                 .error(HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase())
-                .message(ex.getMessage() + 2115)
+                .message(ex.getMessage())
                 .path(request.getRequestURI())
                 .build());
     }
@@ -64,7 +65,7 @@ public class GlobalExceptionHandler {
                 .timestamp(Instant.now().toEpochMilli())
                 .status(HttpStatus.NOT_FOUND.value())
                 .error(HttpStatus.NOT_FOUND.getReasonPhrase())
-                .message(ex.getMessage() + 321)
+                .message(ex.getMessage())
                 .path(request.getRequestURI())
                 .build());
     }
@@ -76,7 +77,7 @@ public class GlobalExceptionHandler {
                 .timestamp(Instant.now().toEpochMilli())
                 .status(status.value())
                 .error(status.getReasonPhrase())
-                .message(ex.getReason() + 123)
+                .message(ex.getReason())
                 .path(request.getRequestURI())
                 .build());
     }
