@@ -11,7 +11,7 @@ export default function ErrorPage({ error: errorProp }: Props) {
 
       if (isRouteErrorResponse(routeError)) {
             return (
-                  <div className='bg-quiz-white flex h-full w-full flex-col items-center justify-center gap-1.5 lg:bg-transparent'>
+                  <div className='bg-quiz-white flex h-screen w-full flex-col items-center justify-center gap-1.5 lg:bg-transparent'>
                         <div className='text-quiz-green lg:text-quiz-white text-8xl lg:text-[350px]'>Oops!</div>
                         <h1 className='text-quiz-dark-green lg:text-quiz-white max-w-[80%] text-3xl font-bold text-wrap wrap-break-word lg:text-5xl'>
                               {routeError.status} - {routeError.statusText.toUpperCase()}

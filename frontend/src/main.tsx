@@ -15,6 +15,7 @@ import RegisterPage from './pages/RegisterPage.tsx';
 import TeamPage from './pages/TeamPage.tsx';
 import LeagueManagementPage from './pages/LeagueManagementPage.tsx';
 import { AuthProvider } from './hooks/useAuth.tsx';
+import { Toaster } from 'react-hot-toast';
 
 const QuizJoinPage = React.lazy(() => import('./pages/QuizJoinPage.tsx'));
 
@@ -88,6 +89,7 @@ const router = createBrowserRouter([
 createRoot(document.getElementById('root')!).render(
       <StrictMode>
             <AuthProvider>
+                  <Toaster position='top-center' />
                   <RouterProvider router={router} />
             </AuthProvider>
       </StrictMode>

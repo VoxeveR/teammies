@@ -36,6 +36,7 @@ type Subscriber = () => void;
 let subscribers: Subscriber[] = [];
 
 export let logoutHandler: (() => void) | null = null;
+
 export function setLogoutHandler(fn: () => void) {
       logoutHandler = fn;
 }
@@ -55,7 +56,6 @@ interface JwtResponseDto {
       access_token_expires_in: number;
 }
 
-// response interceptor obsługujący 401 i retry po refresh
 instance.interceptors.response.use(
       (resp) => resp,
       async (error) => {
@@ -78,11 +78,9 @@ instance.interceptors.response.use(
                         });
                   }
 
-                  // zaczynamy refresh
                   isRefreshing = true;
 
                   try {
-                        // POST refresh — serwer powinien odczytać refresh cookie i ustawić nowe cookie
                         const r = await axios.post<JwtResponseDto>(`${API_BASE}${REFRESH_PATH}`, null, {
                               withCredentials: true,
                               headers: { 'Content-Type': 'application/json' },
@@ -91,18 +89,13 @@ instance.interceptors.response.use(
                         sessionStorage.setItem('access_token', r.data.access_token);
                         sessionStorage.setItem('access_token_type', r.data.access_token_type);
 
-                        // opcjonalnie możesz sprawdzić r.status / r.data jeśli backend zwraca info
-                        // zakładamy, że jeśli nie rzuci erroru, refresh powiódł się i cookie zostały zaktualizowane
-
-                        // powiadamiamy wszystkich oczekujących, żeby retry-owali swoje requesty
                         notifySubscribers();
-
-                        // retry oryginalnego requestu
                         originalConfig.__isRetryRequest = true;
                         return instance(originalConfig);
                   } catch (refreshErr) {
-                        // refresh nie powiódł się - czyścimy queue i wykonujemy logout if provided
-                        notifySubscribers(); // powiadamiamy żeby requesty się zakończyły (one powinny złapać, że cookie dalej nie działa)
+                        notifySubscribers();
+
+                        //TODO: IMPLEMENT
                         if (logoutHandler) logoutHandler();
 
                         return Promise.reject(refreshErr);

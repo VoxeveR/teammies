@@ -1,24 +1,40 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Navbar from '../components/general/Navbar.tsx';
 import { useAuth } from '../hooks/useAuth.tsx';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
+import { toast } from 'react-hot-toast';
 
 function LoginPage() {
       const [username, setUsername] = useState('');
       const [password, setPassword] = useState('');
       const [error, setError] = useState('');
+      const [isLoading, setIsLoading] = useState(false);
 
       const auth = useAuth();
+      const location = useLocation();
       const navigate = useNavigate();
+
+      useEffect(() => {
+            if (location.state?.registered) {
+                  toast.success('Account created successfully! You can now log in.');
+            }
+            window.history.replaceState({}, '');
+      }, [location]);
 
       async function login(e: React.FormEvent<HTMLButtonElement>) {
             e.preventDefault();
-
-            const result = await auth.login(username, password);
-            if (result.success) {
-                  navigate('/leagues');
-            } else {
-                  setError(result.message || 'Login failed');
+            setIsLoading(true);
+            try {
+                  const result = await auth.login(username, password);
+                  if (result.success) {
+                        navigate('/leagues');
+                  } else {
+                        setError(result.message || 'Login failed');
+                  }
+            } catch (err) {
+                  setError('An unexpected error occured!');
+            } finally {
+                  setIsLoading(false);
             }
       }
 
@@ -27,16 +43,13 @@ function LoginPage() {
                   <Navbar showMobile={false}></Navbar>
                   <div className='bg-quiz-white flex h-full min-h-fit w-full flex-col lg:mx-auto lg:my-auto lg:h-fit lg:w-1/4 lg:min-w-lg lg:rounded-xl lg:bg-none lg:pb-8 xl:w-1/5'>
                         {error && (
-                              <div className='flex h-8 w-full justify-center justify-self-center bg-red-500 text-center align-middle text-xl lg:rounded-t-xl'>
-                                    <div className='flex-1 text-center'>{error}</div>
-                                    <div
-                                          className='cursor-pointer pe-2'
-                                          onClick={() => {
-                                                setError('');
-                                          }}
-                                    >
-                                          X
-                                    </div>
+                              <div className='flex h-fit w-full items-center justify-center bg-red-500 text-center text-xl lg:rounded-t-xl'>
+                                    {' '}
+                                    <div className='flex-1 text-center'>{error}</div>{' '}
+                                    <div className='cursor-pointer pe-2' onClick={() => setError('')}>
+                                          {' '}
+                                          X{' '}
+                                    </div>{' '}
                               </div>
                         )}
 
@@ -55,8 +68,8 @@ function LoginPage() {
                               <label className='text-quiz-green text-[16px]'>Password</label>
                               <input type='password' placeholder='Enter your password' className='input mb-2' onChange={(e) => setPassword(e.target.value)}></input>
                               <div className='flex items-center justify-center pt-5'>Forgot your password?</div>
-                              <button type='submit' className='button' onClick={login}>
-                                    LOGIN
+                              <button type='submit' className='button' onClick={login} disabled={isLoading}>
+                                    {isLoading ? 'Logging in...' : 'LOGIN'}
                               </button>
                         </form>
                         <div>

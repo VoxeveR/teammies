@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
+import React from 'react';
 
 type NavItem = {
       label: string;
@@ -13,13 +14,13 @@ type NavbarProps = {
       showMobile?: boolean;
 };
 
-export default function Navbar({ elements, showMobile = true }: NavbarProps) {
+function Navbar({ elements, showMobile = true }: NavbarProps) {
       return (
             <div className='bg-quiz-white flex h-fit w-full flex-col items-center ps-4 pb-4 first:pt-4 last:pb-4 lg:h-24 lg:flex-row'>
                   <NavLink className='flex items-center' to='/'>
                         <img src='/src/assets/logo.svg' className='h-32 w-32 lg:h-20 lg:w-20' />
+                        <div className='font-[Bungee] text-3xl lg:ml-2 lg:text-5xl'>TEAMMIES</div>
                   </NavLink>
-                  <div className='font-[Bungee] text-3xl lg:ml-2 lg:text-5xl'>TEAMMIES</div>
                   <div className='flex w-full flex-col'>
                         {showMobile ? (
                               <label htmlFor='toggle' className='flex cursor-pointer items-center justify-center lg:hidden'>
@@ -45,3 +46,5 @@ export default function Navbar({ elements, showMobile = true }: NavbarProps) {
             </div>
       );
 }
+
+export default React.memo(Navbar);
