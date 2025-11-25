@@ -12,8 +12,12 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-      const [accessToken, setAccessToken] = useState('');
-      let isAuthenticated = false;
+      const [accessToken, setAccessToken] = useState(() => {
+            return sessionStorage.getItem('access_token') || '';
+      });
+      const [isAuthenticated, setIsAuthenticated] = useState(() => {
+            return !!sessionStorage.getItem('access_token');
+      });
 
       async function login(email: string, password: string): Promise<{ success: boolean; message?: string }> {
             return axios
@@ -32,12 +36,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                               const accessToken = response.data.access_token;
                               sessionStorage.setItem('access_token', accessToken);
                               sessionStorage.setItem('access_token_type', response.data.access_token_type);
+                              sessionStorage.setItem('isAuthenticated', 'true');
                               setAccessToken(accessToken);
-                              isAuthenticated = true;
+                              setIsAuthenticated(true);
                               return { success: true };
                         } else if (response.status === 401) {
                               return { success: false, message: 'Invalid username or password!' };
                         }
+                        return { success: false, message: 'Login failed!' };
                   })
                   .catch((error) => {
                         console.log(error);
@@ -64,12 +70,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         } else if (response.status === 422) {
                               return { success: false, message: response.data.message };
                         }
+                        return { success: false, message: 'Registration failed!' };
                   })
                   .catch((error) => {
                         if (error.response) {
                               console.log(error.response.status);
 
-                              if (error.response.status === 422 || 409) {
+                              if (error.response.status === 422 || error.response.status === 409) {
                                     return {
                                           success: false,
                                           message: error.response.data.message,

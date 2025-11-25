@@ -16,6 +16,7 @@ import TeamPage from './pages/TeamPage.tsx';
 import LeagueManagementPage from './pages/LeagueManagementPage.tsx';
 import { AuthProvider } from './hooks/useAuth.tsx';
 import { Toaster } from 'react-hot-toast';
+import AuthenticatedRoute from './middleware/AuthenticatedRoute.tsx';
 
 const QuizJoinPage = React.lazy(() => import('./pages/QuizJoinPage.tsx'));
 
@@ -28,6 +29,19 @@ const router = createBrowserRouter([
       {
             errorElement: <ErrorPage />,
             children: [
+                  {
+                        //  element: <AuthenticatedRoute />,
+                        children: [
+                              {
+                                    path: 'leagues',
+                                    element: (
+                                          <>
+                                                <LeagueManagementPage></LeagueManagementPage>
+                                          </>
+                                    ),
+                              },
+                        ],
+                  },
                   {
                         path: '/',
                         element: <App />,
@@ -73,14 +87,6 @@ const router = createBrowserRouter([
                   {
                         path: 'team',
                         element: <TeamPage></TeamPage>,
-                  },
-                  {
-                        path: 'leagues',
-                        element: (
-                              <>
-                                    <LeagueManagementPage></LeagueManagementPage>
-                              </>
-                        ),
                   },
             ],
       },

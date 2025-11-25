@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+@plugin 'flowbite-react/plugin/tailwindcss';
+@source '../.flowbite-react/class-list.json';
 
 @font-face {
       font-family: 'Baloo Thambi';
@@ -43,7 +45,7 @@
 }
 
 .button {
-      @apply bg-quiz-dark-green text-quiz-white w-full rounded-xl p-3 transition-shadow duration-200 ease-out;
+      @apply bg-quiz-dark-green text-quiz-white w-full rounded-xl p-3 text-center transition-shadow duration-200 ease-out;
 }
 .button:hover {
       @apply bg-quiz-light-green scale-105 shadow-lg;
