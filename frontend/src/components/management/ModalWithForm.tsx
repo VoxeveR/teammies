@@ -1,3 +1,5 @@
+import { faCirclePlus } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useRef, useState } from 'react';
 
 interface ModalWithFormProps {
@@ -109,8 +111,9 @@ export default function ModalWithForm({ onSubmitData }: ModalWithFormProps) {
 
       return (
             <div className='p-6'>
-                  <button onClick={() => setIsOpen(true)} className='button'>
-                        Create Quiz
+                  <button onClick={() => setIsOpen(true)} className='button flex'>
+                        <FontAwesomeIcon icon={faCirclePlus} />
+                        <div className='ps-2'>Add new quiz</div>
                   </button>
 
                   {isOpen && (

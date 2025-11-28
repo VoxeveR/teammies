@@ -13,6 +13,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@EqualsAndHashCode(exclude = {"quiz", "answerOptions"})
 @Table(name = "questions",
         indexes = {@Index(columnList = "quiz_id, position")})
 public class Question {

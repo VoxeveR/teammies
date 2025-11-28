@@ -5,7 +5,9 @@ import Navbar from '../components/general/Navbar';
 import api from '../middleware/api';
 import { Datepicker, ThemeProvider } from 'flowbite-react';
 import toast from 'react-hot-toast';
-import ModalWithForm from '../components/ModalWithForm';
+import ModalWithForm from '../components/management/ModalWithForm';
+import NoContent from '../components/management/NoContent';
+import { NavLink } from 'react-router-dom';
 
 const customTheme = {
       datepicker: {
@@ -74,6 +76,7 @@ function LeagueManagementPage() {
       const [startDate, setStartDate] = useState<Date | null>();
       const [endDate, setEndDate] = useState<Date | null>();
       const [isLoading, setIsLoading] = useState(false);
+      const [showForMobile, setShowFormMobile] = useState(false);
 
       const fetchLeagues = () => {
             api.get('/leagues/')
@@ -138,15 +141,19 @@ function LeagueManagementPage() {
       }, [leaguesData, query]);
 
       return (
-            <div className='flex h-screen flex-col'>
+            <div className='flex h-fit flex-col lg:h-screen'>
                   <Navbar />
-                  <ModalWithForm></ModalWithForm>
-                  <div className='flex h-full w-full items-center justify-center'>
-                        <div className='bg-quiz-white lg:bg-quiz-white/75 flex h-full w-full flex-col gap-6 p-10 lg:h-[90%] lg:w-4/5 lg:rounded-xl'>
-                              <h1 className='text-center text-3xl font-bold lg:text-start lg:text-5xl'>League Management</h1>
+
+                  <div className='flex h-fit w-full items-center justify-center lg:h-full'>
+                        <div className='bg-quiz-white lg:bg-quiz-white/75 flex h-fit min-h-screen w-full flex-col gap-3 p-4 lg:h-[90%] lg:min-h-fit lg:w-4/5 lg:gap-6 lg:rounded-xl lg:p-10'>
+                              <div className='text-center text-4xl lg:text-left lg:text-6xl'>LEAGUE MANAGEMENT</div>
+                              <button className='button lg:hidden' onClick={() => setShowFormMobile((prev) => !prev)}>
+                                    {showForMobile ? 'HIDE FORM' : 'CREATE NEW LEAGUE'}
+                              </button>
+
                               <div className='flex flex-1 flex-col gap-6 lg:flex-row'>
                                     {/* Lewy panel */}
-                                    <div className='bg-quiz-white flex w-3/10 flex-col gap-4 rounded-xl p-4'>
+                                    <div className={`bg-quiz-white flex flex-col gap-4 rounded-xl p-4 lg:w-3/10 ${showForMobile ? 'flex' : 'hidden'} lg:flex`}>
                                           <div className='text-quiz-green text-3xl'>Create a new league</div>
                                           <div>
                                                 <div className='text-quiz-light-green text-xl'>League name</div>
@@ -202,10 +209,10 @@ function LeagueManagementPage() {
                                     </div>
 
                                     {/* Prawy panel */}
-                                    <div className='x flex flex-1 flex-col p-2'>
+                                    <div className='flex flex-1 flex-col lg:p-2'>
                                           {/* Header z napisem i searchbarem */}
-                                          <div className='mb-4 flex shrink-0 items-center justify-between'>
-                                                <h2 className='text-2xl font-bold'>Your Leagues</h2>
+                                          <div className='flex shrink-0 flex-col items-center justify-between lg:mb-4 lg:flex-row'>
+                                                <h2 className='order-1 pt-4 text-2xl font-bold lg:order-first lg:pt-0'>Your Leagues</h2>
                                                 <div className='relative w-full max-w-sm items-center'>
                                                       <label htmlFor='league-search' className='sr-only'>
                                                             Search leagues
@@ -224,20 +231,23 @@ function LeagueManagementPage() {
 
                                           {/* Lista lig z przewijaniem */}
                                           <div className='relative h-full w-full flex-1'>
-                                                <div className='scrollbar absolute inset-0 overflow-auto pe-2'>
+                                                <div className='lg:scrollbar inset-0 pe-2 lg:absolute lg:overflow-auto'>
                                                       {filtered.map((league) => (
-                                                            <div key={league.league_id} className='bg-quiz-white mt-2 flex w-full items-center justify-between rounded-lg p-4'>
-                                                                  <div>
+                                                            <div
+                                                                  key={league.league_id}
+                                                                  className='bg-quiz-white border-s-quiz-dark-green mt-2 flex w-full items-center justify-between rounded-lg border border-s-16 p-4 lg:border-none'
+                                                            >
+                                                                  <NavLink to={`${league.league_id}/quizzes`}>
                                                                         <div className='text-2xl'>{league.league_name}</div>
                                                                         <div className='text-quiz-light-green text-sm'>{league.description}</div>
-                                                                  </div>
+                                                                  </NavLink>
 
                                                                   <div className='flex items-center gap-2'>
                                                                         <button className='button'>EDIT</button>
                                                                   </div>
                                                             </div>
                                                       ))}
-                                                      {filtered.length === 0 && <p className='text-quiz-dark-green mt-4 text-center text-5xl'>No leagues found.</p>}
+                                                      {filtered.length === 0 && <NoContent title='No leagues yet' description='It looks like there are no leagues.'></NoContent>}
                                                 </div>
                                           </div>
                                     </div>

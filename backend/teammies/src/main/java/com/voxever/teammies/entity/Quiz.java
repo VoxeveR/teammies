@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.util.Date;
 import java.util.Set;
 
 @Data
@@ -28,6 +29,9 @@ public class Quiz {
 
     @Column(columnDefinition = "text")
     private String description;
+
+    @Column(name = "quiz_date")
+    private Date quizDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)

@@ -12,6 +12,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@EqualsAndHashCode(exclude = "question")
 @Table(name = "answer_options",
         indexes = {@Index(columnList = "question_id, position")})
 public class AnswerOption {
@@ -28,7 +29,7 @@ public class AnswerOption {
     private String text;
 
     @Column(name = "is_correct", nullable = false)
-    private Boolean isCorrect;
+    private Boolean correct;
 
     @Column(nullable = false)
     private Integer position;

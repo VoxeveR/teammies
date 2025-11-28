@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface QuizRepository extends JpaRepository<Quiz, Long> {
-//    List<Quiz> findByLeagueId(Long leagueId);
-//
-//    Optional<Quiz> findByIdAndLeagueId(Long quizId, Long leagueId);
+    List<Quiz> findByLeagueId(Long leagueId);
+
+    Optional<Quiz> findByIdAndLeagueId(Long quizId, Long leagueId);
 }

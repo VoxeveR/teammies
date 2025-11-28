@@ -20,7 +20,7 @@ public class League {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long leagueId;
+    private Long id;
 
     @Column(name = "league_name", nullable = false, unique = true)
     private String leagueName;

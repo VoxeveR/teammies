@@ -16,12 +16,12 @@ type NavbarProps = {
 
 function Navbar({ elements, showMobile = true }: NavbarProps) {
       return (
-            <div className='bg-quiz-white flex h-fit w-full flex-col items-center ps-4 pb-4 first:pt-4 last:pb-4 lg:h-24 lg:flex-row'>
-                  <NavLink className='flex items-center' to='/'>
+            <div className='bg-quiz-white flex h-fit w-full flex-col items-center pb-4 first:pt-4 last:pb-4 lg:h-24 lg:flex-row lg:ps-4'>
+                  <NavLink className='flex flex-col items-center gap-2 lg:flex-row lg:gap-0' to='/'>
                         <img src='/src/assets/logo.svg' className='h-32 w-32 lg:h-20 lg:w-20' />
                         <div className='font-[Bungee] text-3xl lg:ml-2 lg:text-5xl'>TEAMMIES</div>
                   </NavLink>
-                  <div className='flex w-full flex-col'>
+                  <div className='flex w-full flex-col pt-2'>
                         {showMobile ? (
                               <label htmlFor='toggle' className='flex cursor-pointer items-center justify-center lg:hidden'>
                                     <FontAwesomeIcon icon={faBars} className='text-3xl' />

@@ -45,7 +45,7 @@ public class LeagueService {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(CreateLeagueResponse.builder().leagueId(createdLeague.getLeagueId()).build());
+                .body(CreateLeagueResponse.builder().leagueId(createdLeague.getId()).build());
     }
 
     @Transactional
@@ -85,7 +85,7 @@ public class LeagueService {
 
     private LeagueResponse toLeagueResponse(League league) {
         return LeagueResponse.builder()
-                .leagueId(league.getLeagueId())
+                .leagueId(league.getId())
                 .leagueName(league.getLeagueName())
                 .description(league.getDescription())
                 .teamSize(league.getTeamSize())
