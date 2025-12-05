@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -20,13 +21,22 @@ public class League {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long leagueId;
+    private Long id;
+
+    @Column(name = "league_name", nullable = false, unique = true)
+    private String leagueName;
 
     @Column(name = "description")
     private String description;
 
     @Column(name = "team_size", nullable = false)
     private Integer teamSize;
+
+    @Column(name ="start_date", nullable=false)
+    private LocalDate startDate;
+
+    @Column(name = "end_date", nullable=false)
+    private LocalDate endDate;
 
     @Column(name = "max_teams", nullable = false)
     private Integer maxTeams;
@@ -49,6 +59,9 @@ public class League {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    @OneToMany(mappedBy = "league", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Quiz> quizzes;
 }
 
 /*

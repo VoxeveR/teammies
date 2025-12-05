@@ -12,18 +12,37 @@ import React from 'react';
 import WaitingPage from './pages/WaitingPage.tsx';
 import LoginPage from './pages/LoginPage.tsx';
 import RegisterPage from './pages/RegisterPage.tsx';
+import TeamPage from './pages/TeamPage.tsx';
+import LeagueManagementPage from './pages/LeagueManagementPage.tsx';
+import { AuthProvider } from './hooks/useAuth.tsx';
+import { Toaster } from 'react-hot-toast';
+import AuthenticatedRoute from './middleware/AuthenticatedRoute.tsx';
+import QuizManagementPage from './pages/QuizManagementPage.tsx';
 
 const QuizJoinPage = React.lazy(() => import('./pages/QuizJoinPage.tsx'));
-
-const exampleNavbar = [
-      { label: 'Main', linkTo: '/' },
-      { label: 'Quiz', linkTo: '/quiz' },
-];
 
 const router = createBrowserRouter([
       {
             errorElement: <ErrorPage />,
             children: [
+                  {
+                        element: <AuthenticatedRoute />,
+                        children: [
+                              {
+                                    path: 'leagues',
+                                    element: (
+                                          <>
+                                                <LeagueManagementPage></LeagueManagementPage>
+                                          </>
+                                    ),
+                              },
+                              {
+                                    path: 'leagues/:leagueId/quizzes',
+                                    element: <QuizManagementPage />,
+                              },
+                        ],
+                  },
+
                   {
                         path: '/',
                         element: <App />,
@@ -41,10 +60,6 @@ const router = createBrowserRouter([
                   {
                         path: 'join',
                         element: <QuizJoinPage />,
-                  },
-                  {
-                        path: 'navbar',
-                        element: <Navbar elements={exampleNavbar} />,
                   },
                   {
                         path: 'test-suspense',
@@ -66,12 +81,19 @@ const router = createBrowserRouter([
                         path: 'register',
                         element: <RegisterPage></RegisterPage>,
                   },
+                  {
+                        path: 'team',
+                        element: <TeamPage></TeamPage>,
+                  },
             ],
       },
 ]);
 
 createRoot(document.getElementById('root')!).render(
       <StrictMode>
-            <RouterProvider router={router} />
+            <AuthProvider>
+                  <Toaster position='top-center' />
+                  <RouterProvider router={router} />
+            </AuthProvider>
       </StrictMode>
 );

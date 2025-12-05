@@ -4,6 +4,8 @@ import com.voxever.teammies.auth.repository.RefreshTokenRepository;
 import com.voxever.teammies.auth.repository.UserRepository;
 import com.voxever.teammies.entity.RefreshToken;
 import com.voxever.teammies.entity.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -71,29 +73,42 @@ public class RefreshTokenService {
 
     @Transactional
     public void findAndDelete(String token) {
-        RefreshToken removeToken = findByPrefix(token);
+        RefreshToken removeToken = findByPrefixForUpdate(token);
         refreshTokenRepository.delete(removeToken);
     }
 
     @Transactional
     public RefreshToken rotateRefreshToken(String rawToken) {
-        RefreshToken oldRefreshToken = findByPrefix(rawToken);
+        Logger log = LoggerFactory.getLogger(getClass());
+
+        log.debug("Rotating refresh token, rawToken prefix: {}", rawToken.substring(0, PREFIX_LENGTH));
+
+        RefreshToken oldRefreshToken = findByPrefixForUpdate(rawToken); // użycie blokady pesymistycznej
+        log.debug("Found refresh token with ID: {} for user: {}", oldRefreshToken.getKeyId(), oldRefreshToken.getUser().getUserId());
+
         User tokenOwner = oldRefreshToken.getUser();
 
         verifyExpirationDate(oldRefreshToken);
+        log.debug("Refresh token {} is valid, proceeding to delete", oldRefreshToken.getKeyId());
+
         refreshTokenRepository.delete(oldRefreshToken);
+        refreshTokenRepository.flush(); // wymusza synchronizację z DB
+        log.debug("Old refresh token {} deleted", oldRefreshToken.getKeyId());
 
-        return createRefreshToken(tokenOwner);
+        RefreshToken newToken = createRefreshToken(tokenOwner);
+        log.debug("Created new refresh token with ID: {} for user: {}", newToken.getKeyId(), tokenOwner.getUserId());
+
+        return newToken;
     }
-
-    private RefreshToken findByPrefix(String rawToken) {
+    private RefreshToken findByPrefixForUpdate(String rawToken) {
         String tokenPrefix = rawToken.substring(0, PREFIX_LENGTH);
-        List<RefreshToken> tokenCandidates = refreshTokenRepository.findAllByPrefix(tokenPrefix);
+        List<RefreshToken> tokenCandidates = refreshTokenRepository.findAllByPrefixForUpdate(tokenPrefix);
 
         return tokenCandidates.stream()
                 .filter(token -> encoder.matches(rawToken, token.getHashedToken()))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Token doesn't exist!"));
+
     }
 
     private void verifyExpirationDate(RefreshToken token) {

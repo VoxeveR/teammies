@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+@plugin 'flowbite-react/plugin/tailwindcss';
+@source '../.flowbite-react/class-list.json';
 
 @font-face {
       font-family: 'Baloo Thambi';
@@ -17,15 +19,36 @@
       --color-quiz-light-green: #1cabb0;
 }
 
+@layer utilities {
+      .scrollbar::-webkit-scrollbar {
+            width: 15px;
+            height: 15px;
+      }
+
+      .scrollbar::-webkit-scrollbar-track {
+            border-radius: 100vh;
+            background: #1cabb0;
+      }
+
+      .scrollbar::-webkit-scrollbar-thumb {
+            background: #11676a;
+            border-radius: 100vh;
+      }
+
+      .scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #083335;
+      }
+}
+
 .input {
       @apply bg-quiz-green text-quiz-white w-full rounded-xl p-2;
 }
 
 .button {
-      @apply bg-quiz-dark-green text-quiz-white w-full rounded-xl p-3 transition-shadow transition-transform duration-200 ease-out;
+      @apply bg-quiz-dark-green text-quiz-white border-quiz-dark-green w-full cursor-pointer rounded-xl border-3 p-3 text-center transition-shadow duration-200 ease-out;
 }
 .button:hover {
-      @apply bg-quiz-light-green scale-105 shadow-lg;
+      @apply bg-quiz-light-green border-quiz-light-green scale-105 shadow-lg;
 }
 .button:active {
       @apply translate-y-1 scale-95;
@@ -39,14 +62,33 @@
       @apply ring-quiz-light-green ring-2 ring-offset-2;
 }
 
+.secondaryButton {
+      @apply text-quiz-dark-green w-full cursor-pointer rounded-xl border-3 bg-none p-3 text-center transition-shadow duration-200 ease-out;
+}
+
+.secondaryButton:hover {
+      @apply scale-105 shadow-lg;
+}
+.secondaryButton:active {
+      @apply translate-y-1 scale-95;
+}
+
+.secondaryButton:focus {
+      @apply outline-none; /* removes default outline for all focus events */
+}
+
+.secondaryButton:focus-visible {
+      @apply ring-quiz-light-green ring-2 ring-offset-2;
+}
+
 /* optional: remove mobile tap highlight */
-.button,
-.button * {
+.secondaryButton,
+.secondaryButton * {
       -webkit-tap-highlight-color: transparent;
 }
 
-.button,
-.button * {
+.secondaryButton,
+.secondaryButton * {
       -webkit-tap-highlight-color: transparent;
 }
 
@@ -55,6 +97,7 @@
 body {
       width: 100%;
       min-height: 100vh;
+      height: auto;
 }
 
 :root,
@@ -66,7 +109,7 @@ body {
       color-scheme: light dark;
       background-image: url('./assets/background.png');
       background-color: #11676a;
-      background-size: contain;
+      background-size: cover;
 
       color: #083335;
 

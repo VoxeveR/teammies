@@ -38,14 +38,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-                .cors().disable()
+                .cors().and()
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/auth/register").permitAll()
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
-//                        .requestMatchers("/api/**").permitAll()
                         .anyRequest().authenticated())
 //                .oauth2Login(oauth2 -> {
 //                    oauth2.successHandler(oauth2LoginSuccessHandler);

@@ -29,7 +29,6 @@ function App() {
                               <p className='text-sm text-gray-600'>Use the navigation to open the quiz or other pages.</p>
                         </div>
 
-                        {/* This is important: nested route children (like /quiz) will render here */}
                         <div className='mt-6'>
                               <Outlet />
                         </div>

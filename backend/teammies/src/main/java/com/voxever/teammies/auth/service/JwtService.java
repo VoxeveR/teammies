@@ -1,11 +1,11 @@
 package com.voxever.teammies.auth.service;
 
+import com.voxever.teammies.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import com.voxever.teammies.entity.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +22,7 @@ public class JwtService {
     private final String secretKey;
     private final Integer jwtTokenValidityMs;
 
-    public JwtService(@Value("${jwt.secretKey}") String secretKey, @Value("${jwt.token-validity-ms}") Integer jwtTokenValidityMs) {
+    public JwtService(@Value("${jwt.secretKey}") String secretKey, @Value("90000") Integer jwtTokenValidityMs) {
         this.secretKey = secretKey;
         this.jwtTokenValidityMs = jwtTokenValidityMs;
     }

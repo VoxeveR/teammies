@@ -19,12 +19,6 @@ public class JwtResponseDto {
     @JsonProperty("access_token_expires_in")
     private long accessTokenExpiresIn;
 
-    @JsonProperty("refresh_token")
-    private String refreshToken;
-
-    @JsonProperty("refresh_token_expires_in")
-    private long refreshTokenExpiresIn;
-
     @JsonProperty("username")
     private String username;
 

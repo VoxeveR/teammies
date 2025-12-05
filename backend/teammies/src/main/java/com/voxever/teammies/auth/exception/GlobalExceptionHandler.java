@@ -1,10 +1,13 @@
 package com.voxever.teammies.auth.exception;
 
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.voxever.teammies.auth.dto.ErrorResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -12,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import javax.naming.AuthenticationException;
 import java.time.Instant;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -31,7 +35,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponseDto> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
         String errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .map(DefaultMessageSourceResolvable::getDefaultMessage)
                 .collect(Collectors.joining("; "));
 
         return ResponseEntity.unprocessableEntity().body(ErrorResponseDto.builder()
@@ -77,4 +81,26 @@ public class GlobalExceptionHandler {
                 .path(request.getRequestURI())
                 .build());
     }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<?> handleInvalidJson(HttpMessageNotReadableException ex) {
+        String message = "Malformed JSON request";
+
+        // Specjalne wykrywanie błędów typu (np. Boolean expected, String given)
+        if (ex.getCause() instanceof InvalidFormatException formatException) {
+            String field = formatException.getPath().get(0).getFieldName();
+            String targetType = formatException.getTargetType().getSimpleName();
+
+            message = "Field '" + field + "' must be of type " + targetType;
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "status", 400,
+                        "error", "Invalid JSON",
+                        "message", message
+                ));
+    }
+
 }
