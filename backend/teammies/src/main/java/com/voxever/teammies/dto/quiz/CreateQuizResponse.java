@@ -16,7 +16,7 @@ public class CreateQuizResponse {
     private String title;
     private String description;
     private boolean published;
-    private Set<QuestionResponse> questions; // include questions
+    private Set<QuestionResponse> questions;
 
     @Data
     @NoArgsConstructor

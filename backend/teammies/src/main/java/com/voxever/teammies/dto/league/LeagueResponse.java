@@ -3,6 +3,8 @@ package com.voxever.teammies.dto.league;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Builder @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class LeagueResponse {
 
@@ -20,6 +22,12 @@ public class LeagueResponse {
 
     @JsonProperty("max_teams")
     private Integer maxTeams;
+
+    @JsonProperty("start_date")
+    private LocalDate startDate;
+
+    @JsonProperty("end_date")
+    private LocalDate endDate;
 
     @JsonProperty("is_public")
     private Boolean isPublic;

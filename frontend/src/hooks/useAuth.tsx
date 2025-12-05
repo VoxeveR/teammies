@@ -7,6 +7,7 @@ interface AuthContextType {
       login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
       register: (email: string, username: string, password: string) => Promise<{ success: boolean; message?: string }>;
       isAuthenticated: boolean;
+      logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -92,7 +93,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   });
       }
 
-      return <AuthContext.Provider value={{ accessToken, setAccessToken, login, register, isAuthenticated }}>{children}</AuthContext.Provider>;
+      async function logout(): Promise<void> {
+            try {
+                  await axios.post(
+                        'http://localhost:8080/api/auth/logout',
+                        {},
+                        { withCredentials: true } // needed for refresh token cookie
+                  );
+            } catch (e) {
+                  console.log('Server logout failed, clearing client anyway.');
+            }
+
+            sessionStorage.removeItem('access_token');
+            sessionStorage.removeItem('access_token_type');
+            sessionStorage.removeItem('isAuthenticated');
+
+            setAccessToken('');
+            setIsAuthenticated(false);
+      }
+
+      return <AuthContext.Provider value={{ accessToken, setAccessToken, login, register, isAuthenticated, logout }}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

@@ -21,17 +21,12 @@ import QuizManagementPage from './pages/QuizManagementPage.tsx';
 
 const QuizJoinPage = React.lazy(() => import('./pages/QuizJoinPage.tsx'));
 
-const exampleNavbar = [
-      { label: 'Main', linkTo: '/' },
-      { label: 'Quiz', linkTo: '/quiz' },
-];
-
 const router = createBrowserRouter([
       {
             errorElement: <ErrorPage />,
             children: [
                   {
-                        //  element: <AuthenticatedRoute />,
+                        element: <AuthenticatedRoute />,
                         children: [
                               {
                                     path: 'leagues',
@@ -65,11 +60,6 @@ const router = createBrowserRouter([
                   {
                         path: 'join',
                         element: <QuizJoinPage />,
-                  },
-
-                  {
-                        path: 'navbar',
-                        element: <Navbar elements={exampleNavbar} />,
                   },
                   {
                         path: 'test-suspense',

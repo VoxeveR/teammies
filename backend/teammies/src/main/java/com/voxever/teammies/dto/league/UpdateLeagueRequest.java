@@ -1,7 +1,10 @@
 package com.voxever.teammies.dto.league;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
+
+import java.time.LocalDate;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class UpdateLeagueRequest {
@@ -20,4 +23,12 @@ public class UpdateLeagueRequest {
 
     @JsonProperty("is_public")
     private Boolean isPublic;
+
+    @JsonProperty("start_date")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate startDate;
+
+    @JsonProperty("end_date")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate endDate;
 }

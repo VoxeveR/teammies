@@ -1,10 +1,7 @@
 package com.voxever.teammies.controller;
 
 
-import com.voxever.teammies.dto.league.CreateLeagueRequest;
-import com.voxever.teammies.dto.league.CreateLeagueResponse;
-import com.voxever.teammies.dto.league.LeagueResponse;
-import com.voxever.teammies.dto.league.UpdateLeagueRequest;
+import com.voxever.teammies.dto.league.*;
 import com.voxever.teammies.entity.User;
 
 import com.voxever.teammies.service.LeagueService;
@@ -55,22 +52,16 @@ public class LeagueController {
         return leagueService.deleteLeague(id, user);
     }
 
-//    @GetMapping("/all")
-//    public ResponseEntity<List<LeagueResponse>> getAllLeagues() {
-//        return leagueService.getAllLeagues();
-//    }
+    @GetMapping("/{id}")
+    public ResponseEntity<LeagueResponse> getLeagueById(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        return leagueService.getLeagueById(id, user);
+    }
 
-
-
-//    @GetMapping("/{id}")
-//    public ResponseEntity<LeagueResponse> getLeagueById(@PathVariable Long id) {
-//        return leagueService.getLeagueById(id);
-//    }
-
-
-
-
-
-
+    @GetMapping("/{id}/ranking")
+    public ResponseEntity<List<LeagueStandingResponseDto>> getLeagueRanking(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+        return leagueService.getLeagueRanking(id, user);
+    }
 
 }

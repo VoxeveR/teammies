@@ -3,71 +3,29 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import Navbar from '../components/general/Navbar';
 import api from '../middleware/api';
-import { Datepicker, ThemeProvider } from 'flowbite-react';
 import toast from 'react-hot-toast';
-import ModalWithForm from '../components/management/ModalWithForm';
 import NoContent from '../components/management/NoContent';
 import { NavLink } from 'react-router-dom';
-
-const customTheme = {
-      datepicker: {
-            root: {
-                  base: 'relative',
-            },
-            popup: {
-                  root: {
-                        base: 'absolute bottom-full z-50 block pt-2',
-                        inner: 'inline-block rounded-lg bg-white dark:bg-quiz-light-green p-4 shadow-lg border-2 border-quiz-dark-green',
-                  },
-                  header: {
-                        title: 'px-2 py-3 text-center font-semibold text-quiz-dark-green',
-                        selectors: {
-                              base: 'mb-2 flex justify-between',
-                              button: {
-                                    base: 'rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:bg-quiz-dark-green dark:text-quiz-white dark:hover:bg-gray-600',
-                                    prev: '',
-                                    next: '',
-                                    view: '',
-                              },
-                        },
-                        footer: {
-                              base: 'mt-2 flex space-x-2',
-                              button: {
-                                    base: 'w-full rounded-lg px-5 py-2 text-center text-sm font-medium focus:ring-4 focus:ring-primary-300',
-                                    today: 'bg-primary-700 text-white hover:bg-primary-800 dark:bg-primary-600 dark:hover:bg-primary-700',
-                                    clear: 'border border-gray-300 bg-white text-gray-900 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600',
-                              },
-                        },
-                  },
-                  views: {
-                        days: {
-                              header: {
-                                    base: 'mb-1 grid grid-cols-7',
-                                    title: 'h-6 text-center text-sm font-medium leading-6  dark:text-gray-700',
-                              },
-                              items: {
-                                    item: {
-                                          selected: 'bg-quiz-light-green text-white ',
-                                    },
-                              },
-                        },
-                  },
-            },
-      },
-};
+import DatepickerWrapper from '../components/management/DatepickerWrapper';
+import useSessionStorage from '../hooks/useSessionStorage';
 
 interface League {
       league_id: number;
       league_name: string;
       description: string;
       team_size: number;
-      max_eams: number;
+      max_teams: number;
       is_public: boolean;
       owner_id: number;
+      start_date: string; // ISO date string, e.g., "2025-12-04"
+      end_date: string; // ISO date string, e.g., "2025-12-10"
 }
+
 function LeagueManagementPage() {
       const [query, setQuery] = useState('');
-      const [leaguesData, setLeaguesData] = useState<League[]>([]);
+      const [leaguesData, setLeaguesData] = useSessionStorage<League[]>('leaguesData', []);
+
+      //Form data
       const [leagueName, setLeagueName] = useState('');
       const [description, setDescription] = useState('');
       const [teamSize, setTeamSize] = useState('');
@@ -75,25 +33,36 @@ function LeagueManagementPage() {
       const [isPublic, setIsPublic] = useState('private');
       const [startDate, setStartDate] = useState<Date | null>();
       const [endDate, setEndDate] = useState<Date | null>();
+
+      // View data
       const [isLoading, setIsLoading] = useState(false);
       const [showForMobile, setShowFormMobile] = useState(false);
+      const [editLeague, setEditLeague] = useState<League | null>(null);
 
       const fetchLeagues = () => {
             api.get('/leagues/')
-                  .then((response) => setLeaguesData(response.data))
-                  .catch((error) => {
-                        console.log(error);
-                        toast.error('Failed to load leagues');
-                  });
+                  .then((res) => {
+                        setLeaguesData(res.data);
+                        sessionStorage.setItem('leaguesData', JSON.stringify(res.data));
+                  })
+                  .catch((err) => console.error(err));
       };
 
       useEffect(() => {
+            const stored = sessionStorage.getItem('leaguesData');
+            if (stored) setLeaguesData(JSON.parse(stored));
+
             fetchLeagues();
       }, []);
 
       const handleCreateLeague = async () => {
-            if (!leagueName.trim() || !description.trim() || !teamSize || !maxTeams) {
+            if (!leagueName.trim() || !description.trim() || !teamSize || !maxTeams || !startDate || !endDate) {
                   toast.error('Please fill in all required fields');
+                  return;
+            }
+
+            if (endDate <= startDate) {
+                  toast.error('End date must be after start date');
                   return;
             }
 
@@ -108,22 +77,18 @@ function LeagueManagementPage() {
             setIsLoading(true);
 
             try {
-                  const response = await api.post('/leagues/', {
+                  await api.post('/leagues/', {
                         league_name: leagueName,
-                        description: description,
+                        description,
                         team_size: teamSizeNum,
                         max_teams: maxTeamsNum,
                         is_public: isPublic === 'public',
+                        start_date: startDate.toISOString().split('T')[0], // send as yyyy-mm-dd
+                        end_date: endDate.toISOString().split('T')[0],
                   });
 
                   toast.success('League created successfully!');
-                  setLeagueName('');
-                  setDescription('');
-                  setTeamSize('');
-                  setMaxTeams('');
-                  setIsPublic('private');
-                  setStartDate(null);
-                  setEndDate(null);
+                  clearLeague();
                   fetchLeagues();
             } catch (error: any) {
                   const errorMessage = error.response?.data?.message || 'Failed to create league';
@@ -134,11 +99,79 @@ function LeagueManagementPage() {
             }
       };
 
+      const handleSaveEdit = async () => {
+            if (!editLeague) return;
+
+            if (!leagueName.trim() || !description.trim() || !teamSize || !maxTeams || !startDate || !endDate) {
+                  toast.error('Please fill in all required fields');
+                  return;
+            }
+
+            if (endDate <= startDate) {
+                  toast.error('End date must be after start date');
+                  return;
+            }
+
+            try {
+                  await api.put(`/leagues/${editLeague.league_id}`, {
+                        league_name: leagueName,
+                        description,
+                        team_size: parseInt(teamSize),
+                        max_teams: parseInt(maxTeams),
+                        is_public: isPublic === 'public',
+                        start_date: startDate.toISOString().split('T')[0],
+                        end_date: endDate.toISOString().split('T')[0],
+                  });
+
+                  toast.success('League updated successfully!');
+                  clearLeague();
+                  fetchLeagues();
+            } catch (error) {
+                  toast.error('Failed to update league');
+                  console.error(error);
+            }
+      };
+
+      async function handleDeleteLeague(id: number) {
+            const confirmed = confirm('Are you sure you want to delete this league?');
+            if (!confirmed) return;
+
+            try {
+                  await api.delete(`/leagues/${id}`);
+                  toast.success('League deleted');
+                  fetchLeagues();
+            } catch {
+                  toast.error('Failed to delete league');
+            }
+      }
+
       const filtered = useMemo(() => {
             const q = query.trim().toLowerCase();
             if (!q) return leaguesData;
             return leaguesData.filter((l) => l.league_name.toLowerCase().includes(q));
       }, [leaguesData, query]);
+
+      function clearLeague() {
+            setEditLeague(null);
+            setLeagueName('');
+            setDescription('');
+            setTeamSize('');
+            setMaxTeams('');
+            setIsPublic('private');
+            setStartDate(null);
+            setEndDate(null);
+      }
+
+      function startLeagueEditing(league: League) {
+            setEditLeague(league);
+            setLeagueName(league.league_name);
+            setDescription(league.description);
+            setTeamSize(String(league.team_size));
+            setMaxTeams(String(league.max_teams));
+            setIsPublic(league.is_public ? 'public' : 'private');
+            setStartDate(league.start_date ? new Date(league.start_date) : null);
+            setEndDate(league.end_date ? new Date(league.end_date) : null);
+      }
 
       return (
             <div className='flex h-fit flex-col lg:h-screen'>
@@ -154,41 +187,47 @@ function LeagueManagementPage() {
                               <div className='flex flex-1 flex-col gap-6 lg:flex-row'>
                                     {/* Lewy panel */}
                                     <div className={`bg-quiz-white flex flex-col gap-4 rounded-xl p-4 lg:w-3/10 ${showForMobile ? 'flex' : 'hidden'} lg:flex`}>
-                                          <div className='text-quiz-green text-3xl'>Create a new league</div>
+                                          <div className='text-quiz-green text-3xl'>{editLeague ? `Update League` : 'Create a new league'} </div>
                                           <div>
                                                 <div className='text-quiz-light-green text-xl'>League name</div>
                                                 <input className='input' placeholder='League name' value={leagueName} onChange={(e) => setLeagueName(e.target.value)}></input>
                                           </div>
 
-                                          <div>
+                                          <div className='flex flex-1 flex-col'>
                                                 <div className='text-quiz-light-green text-xl'>League description</div>
                                                 <textarea
-                                                      className='input h-40 resize-none align-text-top'
+                                                      className='input h-full resize-none align-text-top'
                                                       placeholder='Provide a brief description of your league'
                                                       value={description}
                                                       onChange={(e) => setDescription(e.target.value)}
                                                 ></textarea>
                                           </div>
                                           <div className='flex w-full flex-row gap-2'>
-                                                <div>
+                                                <div className='w-full'>
                                                       <div className='text-quiz-light-green text-xl'>Start date</div>
-                                                      <ThemeProvider theme={customTheme}>
-                                                            <Datepicker onChange={(date: Date | null) => setStartDate(date)} />
-                                                      </ThemeProvider>
+                                                      <DatepickerWrapper
+                                                            key={startDate?.toISOString() ?? 'start'}
+                                                            value={startDate}
+                                                            onChange={(date) => setStartDate(date)}
+                                                            placeholder='Select start date'
+                                                      />
                                                 </div>
-                                                <div>
+                                                <div className='w-full'>
                                                       <div className='text-quiz-light-green text-xl'>End date</div>
-                                                      <ThemeProvider theme={customTheme}>
-                                                            <Datepicker onChange={(date: Date | null) => setEndDate(date)} />
-                                                      </ThemeProvider>
+                                                      <DatepickerWrapper
+                                                            key={startDate?.toISOString() ?? 'start'}
+                                                            value={endDate}
+                                                            onChange={(date) => setEndDate(date)}
+                                                            placeholder='Select end date'
+                                                      />
                                                 </div>
                                           </div>
                                           <div className='flex w-full flex-row gap-2'>
-                                                <div>
+                                                <div className='w-full'>
                                                       <div className='text-quiz-light-green text-xl'>Team size</div>
-                                                      <input className='input' placeholder='Team size' type='number' value={teamSize} onChange={(e) => setTeamSize(e.target.value)}></input>
+                                                      <input className='input w-full!' placeholder='Team size' type='number' value={teamSize} onChange={(e) => setTeamSize(e.target.value)}></input>
                                                 </div>
-                                                <div>
+                                                <div className='w-full'>
                                                       <div className='text-quiz-light-green text-xl'>Max teams</div>
                                                       <input className='input' placeholder='Max teams' type='number' value={maxTeams} onChange={(e) => setMaxTeams(e.target.value)}></input>
                                                 </div>
@@ -200,10 +239,16 @@ function LeagueManagementPage() {
                                                       <option value='public'>Public</option>
                                                 </select>
                                           </div>
-                                          <div className='flex-1'></div>
-                                          <div className='flex w-full items-center justify-center'>
-                                                <button className='button w-[98%]! disabled:opacity-50' onClick={handleCreateLeague} disabled={isLoading}>
-                                                      {isLoading ? 'CREATING...' : 'CREATE LEAGUE'}
+
+                                          <div className='flex w-full items-center justify-center gap-4'>
+                                                {editLeague && (
+                                                      <button className='secondaryButton w-[44%]!' onClick={() => clearLeague()}>
+                                                            Cancel
+                                                      </button>
+                                                )}
+
+                                                <button className='button disabled:opacity-50' onClick={editLeague ? handleSaveEdit : handleCreateLeague} disabled={isLoading}>
+                                                      {editLeague ? 'Update' : isLoading ? 'Creating...' : 'Create League'}
                                                 </button>
                                           </div>
                                     </div>
@@ -242,12 +287,22 @@ function LeagueManagementPage() {
                                                                         <div className='text-quiz-light-green text-sm'>{league.description}</div>
                                                                   </NavLink>
 
-                                                                  <div className='flex items-center gap-2'>
-                                                                        <button className='button'>EDIT</button>
+                                                                  <div className='flex flex-col items-center gap-2 lg:flex-row'>
+                                                                        <button className='button lg:w-30!' onClick={() => startLeagueEditing(league)}>
+                                                                              EDIT
+                                                                        </button>
+                                                                        <button className='secondaryButton lg:w-30!' onClick={() => handleDeleteLeague(league.league_id)}>
+                                                                              DELETE
+                                                                        </button>
                                                                   </div>
                                                             </div>
                                                       ))}
-                                                      {filtered.length === 0 && <NoContent title='No leagues yet' description='It looks like there are no leagues.'></NoContent>}
+                                                      {filtered.length === 0 && (
+                                                            <NoContent
+                                                                  title={leaguesData.length === 0 ? 'No leagues yet' : 'No leagues found'}
+                                                                  description={leaguesData.length === 0 ? 'It looks like there are no leagues.' : 'Change your search criteria'}
+                                                            ></NoContent>
+                                                      )}
                                                 </div>
                                           </div>
                                     </div>

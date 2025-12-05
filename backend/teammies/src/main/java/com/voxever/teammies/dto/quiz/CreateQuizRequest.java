@@ -55,7 +55,7 @@ public class CreateQuizRequest {
             private boolean correct;
 
             @NotNull
-            private Integer position; // required for DB NOT NULL
+            private Integer position;
         }
     }
 }
