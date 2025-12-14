@@ -7,6 +7,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,32 +28,30 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "quiz_players")
-public class QuizPlayer {
+@Table(name = "team_answers")
+public class TeamAnswer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String nickname;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private boolean isCaptain = false;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id", nullable = true)
+    @JoinColumn(name = "quiz_team_id", nullable = false)
     private QuizTeam team;
 
-    @Column(name = "current_question_id", nullable = true)
-    private Long currentQuestionId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_id", nullable = false)
+    private Question question;
 
-    @Column(name = "current_highlight", nullable = true)
-    private String currentHighlight;
+    @Column(nullable = false)
+    private String finalAnswer;
 
-    @Column(name = "current_highlight_index", nullable = true)
-    private Integer currentHighlightIndex;
+    @Column(nullable = false)
+    private Integer finalAnswerIndex;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DecisionMethod decisionMethod;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
@@ -60,4 +60,10 @@ public class QuizPlayer {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    public enum DecisionMethod {
+        MAJORITY,
+        CAPTAIN_DECISION,
+        RANDOM
+    }
 }

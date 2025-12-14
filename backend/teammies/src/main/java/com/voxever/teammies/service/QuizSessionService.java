@@ -1,42 +1,47 @@
 package com.voxever.teammies.service;
 
-import com.voxever.teammies.dto.quiz.events.QuizEventType;
-import com.voxever.teammies.dto.quiz.rest.GenerateJoinCodeResponse;
-import com.voxever.teammies.dto.quiz.rest.JoinQuizRequest;
-import com.voxever.teammies.dto.quiz.rest.JoinQuizResponse;
-import com.voxever.teammies.dto.quiz.rest.TeamWithPlayersDto;
-import com.voxever.teammies.dto.quiz.rest.StartQuizResponse;
-import com.voxever.teammies.dto.quiz.events.QuestionEventDto;
-import com.voxever.teammies.entity.Quiz;
-import com.voxever.teammies.entity.QuizPlayer;
-import com.voxever.teammies.entity.QuizSession;
-import com.voxever.teammies.entity.QuizTeam;
-import com.voxever.teammies.entity.User;
-import com.voxever.teammies.repository.QuizPlayerRepository;
-import com.voxever.teammies.repository.QuizRepository;
-import com.voxever.teammies.repository.QuizSessionRepository;
-import com.voxever.teammies.repository.QuizTeamRepository;
-
-import jakarta.transaction.Transactional;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Instant;
-import java.time.Duration;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.stream.Collectors;
-
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-
+import com.voxever.teammies.dto.quiz.events.QuestionEventDto;
+import com.voxever.teammies.dto.quiz.events.QuizEventType;
+import com.voxever.teammies.dto.quiz.rest.GenerateJoinCodeResponse;
+import com.voxever.teammies.dto.quiz.rest.JoinQuizRequest;
+import com.voxever.teammies.dto.quiz.rest.JoinQuizResponse;
+import com.voxever.teammies.dto.quiz.rest.StartQuizResponse;
+import com.voxever.teammies.dto.quiz.rest.TeamWithPlayersDto;
+import com.voxever.teammies.dto.quiz.websocket.FinalTeamAnswerDto;
 import com.voxever.teammies.entity.Question;
+import com.voxever.teammies.entity.Quiz;
+import com.voxever.teammies.entity.QuizPlayer;
+import com.voxever.teammies.entity.QuizSession;
+import com.voxever.teammies.entity.QuizTeam;
+import com.voxever.teammies.entity.TeamAnswer;
+import com.voxever.teammies.entity.User;
+import com.voxever.teammies.entity.AnswerOption;
+import com.voxever.teammies.repository.QuestionRepository;
+import com.voxever.teammies.repository.QuizPlayerRepository;
+import com.voxever.teammies.repository.QuizRepository;
+import com.voxever.teammies.repository.QuizSessionRepository;
+import com.voxever.teammies.repository.QuizTeamRepository;
+import com.voxever.teammies.repository.TeamAnswerRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class QuizSessionService {
@@ -45,24 +50,30 @@ public class QuizSessionService {
     private final QuizRepository quizRepository;
     private final QuizTeamRepository quizTeamRepository;
     private final QuizPlayerRepository quizPlayerRepository;
+    private final QuestionRepository questionRepository;
+    private final TeamAnswerRepository teamAnswerRepository;
     private final Random random = new Random();
     private final QuizSessionWebSocketBroadcasts webSocketService;
     private final TaskScheduler taskScheduler;
 
-public QuizSessionService(QuizSessionRepository quizSessionRepository,
-                          QuizRepository quizRepository,
-                          QuizTeamRepository quizTeamRepository,
-                          QuizPlayerRepository quizPlayerRepository,
-                          QuizSessionWebSocketBroadcasts webSocketService, 
-                          TaskScheduler taskScheduler) {
-    this.quizSessionRepository = quizSessionRepository;
-    this.quizRepository = quizRepository;
-    this.quizTeamRepository = quizTeamRepository;
-    this.quizPlayerRepository = quizPlayerRepository;
-    this.webSocketService = webSocketService;
-    this.taskScheduler = taskScheduler;
-}
-    
+    public QuizSessionService(QuizSessionRepository quizSessionRepository,
+                              QuizRepository quizRepository,
+                              QuizTeamRepository quizTeamRepository,
+                              QuizPlayerRepository quizPlayerRepository,
+                              QuestionRepository questionRepository,
+                              TeamAnswerRepository teamAnswerRepository,
+                              QuizSessionWebSocketBroadcasts webSocketService,
+                              TaskScheduler taskScheduler) {
+        this.quizSessionRepository = quizSessionRepository;
+        this.quizRepository = quizRepository;
+        this.quizTeamRepository = quizTeamRepository;
+        this.quizPlayerRepository = quizPlayerRepository;
+        this.questionRepository = questionRepository;
+        this.teamAnswerRepository = teamAnswerRepository;
+        this.webSocketService = webSocketService;
+        this.taskScheduler = taskScheduler;
+    }
+
 
     @Transactional
     public ResponseEntity<GenerateJoinCodeResponse> generateJoinCode(Long leagueId, Long quizId) {
@@ -99,7 +110,7 @@ public QuizSessionService(QuizSessionRepository quizSessionRepository,
                 .build());
     }
 
-     @Transactional
+    @Transactional
     public ResponseEntity<StartQuizResponse> startQuiz(String sessionJoinCode, User user) {
         QuizSession session = quizSessionRepository.findByJoinCode(sessionJoinCode)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Quiz session not found"));
@@ -119,8 +130,8 @@ public QuizSessionService(QuizSessionRepository quizSessionRepository,
 
         for (QuizTeam team : teams) {
             if (team.getPlayers() == null || team.getPlayers().isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
-                    "Team '" + team.getName() + "' has no players. All teams must have at least one player.");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Team '" + team.getName() + "' has no players. All teams must have at least one player.");
             }
         }
 
@@ -145,6 +156,7 @@ public QuizSessionService(QuizSessionRepository quizSessionRepository,
                 .questionTimeTimestamp(Instant.now().plus(Duration.ofSeconds(quiz.getTimeLimit())))
                 .totalQuestions(totalQuestions)
                 .answerOptions(firstQuestion.getAnswerOptions().stream()
+                        .sorted(Comparator.comparingInt(AnswerOption::getPosition))
                         .map(option -> QuestionEventDto.AnswerOptionDto.builder()
                                 .id(option.getId())
                                 .text(option.getText())
@@ -182,10 +194,48 @@ public QuizSessionService(QuizSessionRepository quizSessionRepository,
     }
 
     private void scheduleNextQuestion(String sessionJoinCode, int currentPosition, int timeLimit) {
-        System.out.println("Sending next question");
+        System.out.println("Scheduling final answer calculation and next question");
+        // Schedule to calculate final answers after time expires
+        taskScheduler.schedule(
+                () -> calculateAndBroadcastFinalAnswers(sessionJoinCode, currentPosition),
+                Instant.now().plusSeconds(timeLimit + 1)
+        );
+    }
+
+    @Transactional
+    private void calculateAndBroadcastFinalAnswers(String sessionJoinCode, int currentPosition) {
+        QuizSession session = quizSessionRepository.findByJoinCode(sessionJoinCode)
+                .orElseThrow();
+
+        if (session.getStatus() != QuizSession.SessionStatus.IN_PROGRESS) {
+            return;
+        }
+
+        // Get all teams and their final answers
+        List<QuizTeam> teams = quizTeamRepository.findByQuizSessionId(session.getId());
+        Question currentQuestion = quizRepository.findByIdWithQuestions(session.getQuiz().getId())
+                .orElseThrow()
+                .getQuestions().stream()
+                .filter(q -> q.getPosition() == currentPosition)
+                .findFirst()
+                .orElseThrow();
+
+        // Calculate and broadcast final answer for each team
+        for (QuizTeam team : teams) {
+            try {
+                FinalTeamAnswerDto finalAnswer = calculateAndSaveFinalTeamAnswer(team.getId(), currentQuestion.getId());
+
+                // Broadcast the final answer to the team
+                webSocketService.broadcastFinalAnswer(sessionJoinCode, team.getJoinCode(), finalAnswer);
+            } catch (Exception e) {
+                System.err.println("Error calculating final answer for team " + team.getId() + ": " + e.getMessage());
+            }
+        }
+
+        // Schedule sending next question after 2 seconds
         taskScheduler.schedule(
                 () -> sendNextQuestion(sessionJoinCode, currentPosition),
-                Instant.now().plusSeconds(timeLimit + 3)
+                Instant.now().plusSeconds(2)
         );
     }
 
@@ -229,6 +279,7 @@ public QuizSessionService(QuizSessionRepository quizSessionRepository,
                 )
                 .totalQuestions(quiz.getQuestions().size())
                 .answerOptions(nextQuestion.getAnswerOptions().stream()
+                        .sorted(Comparator.comparingInt(AnswerOption::getPosition))
                         .map(option -> QuestionEventDto.AnswerOptionDto.builder()
                                 .id(option.getId())
                                 .text(option.getText())
@@ -316,4 +367,141 @@ public QuizSessionService(QuizSessionRepository quizSessionRepository,
         } while (quizSessionRepository.findByJoinCode(code).isPresent());
         return code;
     }
+
+    @Transactional
+    public FinalTeamAnswerDto calculateAndSaveFinalTeamAnswer(Long teamId, Long questionId) {
+        QuizTeam team = quizTeamRepository.findByIdWithPlayers(teamId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Team not found"));
+
+        Question question = questionRepository.findById(questionId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Question not found"));
+
+        // Get all players in the team
+        Set<QuizPlayer> players = team.getPlayers();
+
+        if (players == null || players.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Team has no players");
+        }
+
+        // Count votes for each answer option from player highlights (selections)
+        Map<String, Integer> voteCount = new HashMap<>();
+        Map<String, Integer> indexMap = new HashMap<>();
+        QuizPlayer captain = null;
+        String captainAnswer = null;
+        Integer captainAnswerIndex = null;
+
+        for (QuizPlayer player : players) {
+            // Check if player has made a selection for this question
+            if (player.getCurrentHighlight() != null && 
+                player.getCurrentQuestionId() != null && 
+                player.getCurrentQuestionId().equals(questionId)) {
+                
+                String answer = player.getCurrentHighlight();
+                voteCount.put(answer, voteCount.getOrDefault(answer, 0) + 1);
+                if (player.getCurrentHighlightIndex() != null) {
+                    indexMap.put(answer, player.getCurrentHighlightIndex());
+                }
+            }
+
+            if (player.isCaptain()) {
+                captain = player;
+                // Store captain's answer if they voted
+                if (player.getCurrentQuestionId() != null && 
+                    player.getCurrentQuestionId().equals(questionId) &&
+                    player.getCurrentHighlight() != null) {
+                    captainAnswer = player.getCurrentHighlight();
+                    captainAnswerIndex = player.getCurrentHighlightIndex();
+                }
+            }
+        }
+
+        // Determine final answer based on voting logic
+        String finalAnswer = null;
+        Integer finalAnswerIndex = null;
+        String decisionMethod = null;
+
+        if (voteCount.isEmpty()) {
+            // No votes cast - set answer to null with RANDOM method
+            finalAnswer = null;
+            finalAnswerIndex = null;
+            decisionMethod = "RANDOM";
+        } else {
+            // Find the answer with the most votes
+            String topAnswer = voteCount.entrySet().stream()
+                    .max(Map.Entry.comparingByValue())
+                    .map(Map.Entry::getKey)
+                    .orElse(null);
+
+            int maxVotes = voteCount.get(topAnswer);
+
+            // Count how many answers have the max vote count (tie)
+            long tieCount = voteCount.values().stream()
+                    .filter(count -> count == maxVotes)
+                    .count();
+
+            if (tieCount == 1) {
+                // Clear winner by majority
+                finalAnswer = topAnswer;
+                finalAnswerIndex = indexMap.get(topAnswer);
+                decisionMethod = "MAJORITY";
+            } else {
+                // Tie detected - need captain or random
+                if (captain != null && captainAnswer != null) {
+                    // Captain breaks the tie
+                    finalAnswer = captainAnswer;
+                    finalAnswerIndex = captainAnswerIndex;
+                    decisionMethod = "CAPTAIN_DECISION";
+                } else {
+                    // Random selection among tied answers
+                    List<String> tiedAnswers = voteCount.entrySet().stream()
+                            .filter(e -> e.getValue() == maxVotes)
+                            .map(Map.Entry::getKey)
+                            .collect(Collectors.toList());
+
+                    finalAnswer = tiedAnswers.get(random.nextInt(tiedAnswers.size()));
+                    finalAnswerIndex = indexMap.get(finalAnswer);
+                    decisionMethod = "RANDOM";
+                }
+            }
+        }
+
+        // Save the final team answer to database
+        TeamAnswer teamAnswer = TeamAnswer.builder()
+                .team(team)
+                .question(question)
+                .finalAnswer(finalAnswer)
+                .finalAnswerIndex(finalAnswerIndex)
+                .decisionMethod(TeamAnswer.DecisionMethod.valueOf(decisionMethod))
+                .build();
+
+        teamAnswerRepository.save(teamAnswer);
+
+        // Get the correct answer from the question
+        AnswerOption correctOption = question.getAnswerOptions().stream()
+                .filter(AnswerOption::getCorrect)
+                .findFirst()
+                .orElse(null);
+
+        String correctAnswer = correctOption != null ? correctOption.getText() : null;
+        Integer correctAnswerIndex = correctOption != null ? correctOption.getPosition() : null;
+        // If finalAnswer is null, isCorrect should be false
+        Boolean isCorrect = finalAnswer != null && correctAnswer != null && finalAnswer.equals(correctAnswer);
+
+        // Build and return the DTO for broadcasting to frontend
+        FinalTeamAnswerDto finalTeamAnswerDto = FinalTeamAnswerDto.builder()
+                .teamId(teamId)
+                .teamName(team.getName())
+                .questionId(questionId)
+                .finalAnswer(finalAnswer)
+                .finalAnswerIndex(finalAnswerIndex)
+                .correctAnswer(correctAnswer)
+                .correctAnswerIndex(correctAnswerIndex)
+                .isCorrect(isCorrect)
+                .decisionMethod(decisionMethod)
+                .timestamp(Instant.now().toEpochMilli())
+                .build();
+
+        return finalTeamAnswerDto;
+    }
 }
+

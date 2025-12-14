@@ -5,9 +5,10 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.voxever.teammies.dto.quiz.events.PlayerJoinedEvent;
+import com.voxever.teammies.dto.quiz.events.QuestionEventDto;
 import com.voxever.teammies.dto.quiz.events.QuizEventType;
 import com.voxever.teammies.dto.quiz.events.TeamJoinedEvent;
-import com.voxever.teammies.dto.quiz.events.QuestionEventDto;
+import com.voxever.teammies.dto.quiz.websocket.FinalTeamAnswerDto;
 import com.voxever.teammies.entity.QuizPlayer;
 import com.voxever.teammies.entity.QuizTeam;
 
@@ -84,6 +85,14 @@ public class QuizSessionWebSocketBroadcasts {
         messagingTemplate.convertAndSend(
                 "/topic/quiz-session/" + sessionJoinCode + "/events",
                 questionEvent
+        );
+    }
+
+    public void broadcastFinalAnswer(String sessionJoinCode, String teamCode, FinalTeamAnswerDto finalAnswer) {
+        log.info("Broadcasting final answer for team {} in session: {}", teamCode, sessionJoinCode);
+        messagingTemplate.convertAndSend(
+                "/topic/quiz-session/" + sessionJoinCode + "/team/" + teamCode + "/final-answer",
+                finalAnswer
         );
     }
 }

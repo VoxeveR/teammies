@@ -13,15 +13,6 @@ interface TeamSelection {
       selectedOption: string;
 }
 
-interface AnswerResult {
-      questionId: number;
-      finalAnswer: string;
-      isCorrect: boolean;
-      pointsAwarded: number;
-      timestamp: string;
-      correctAnswerIndex?: number;
-}
-
 function QuizPage() {
       const location = useLocation();
       const params = useParams();
@@ -30,13 +21,12 @@ function QuizPage() {
       const [questionNumber, setQuestionNumber] = useState(1);
       const [questionCount, setQuestionCount] = useState(1);
       const [teamSelections, setTeamSelections] = useState<TeamSelection[]>([]);
-      const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
+      const [finalAnswer, setFinalAnswer] = useState<any>(null);
 
       // Get playerId from params or from quizData as fallback
       const playerId = params.playerId || quizData.quizPlayerId;
 
       const stompClientRef = useRef<StompJs.Client | null>(null);
-      const answerResultSubscriptionRef = useRef<string | null>(null);
 
       useEffect(() => {
             if (!params.sessionCode || !params.teamCode) return;
@@ -57,9 +47,9 @@ function QuizPage() {
                                           setCurrentQuestion(convertedQuestion);
                                           setQuestionNumber(event.position || 1);
                                           setQuestionCount(event.totalQuestions || 1);
-                                          // Clear team selections and answer result for new question
+                                          // Clear team selections and final answer for new question
                                           setTeamSelections([]);
-                                          setAnswerResult(null);
+                                          setFinalAnswer(null);
                                     }
                               } catch (error) {
                                     console.error('Error parsing question message:', error);
@@ -82,35 +72,17 @@ function QuizPage() {
                               }
                         });
 
-                        // Subscribe to answer results
-                        const subscription = stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/team/${params.teamCode}/answer-result`, (message) => {
+                        // Subscribe to final answers
+                        stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/team/${params.teamCode}/final-answer`, (message) => {
                               try {
-                                    const result = JSON.parse(message.body);
-                                    console.log('Answer result received:', result, 'Current question ID:', currentQuestion?.id);
-
-                                    // Only process if this result is for the current question
-                                    if (!currentQuestion || result.questionId !== currentQuestion.id) {
-                                          console.log('Ignoring answer result - not for current question');
-                                          return;
-                                    }
-
-                                    // Find the correct answer index by matching the finalAnswer text against options
-                                    let correctAnswerIndex = -1;
-                                    correctAnswerIndex = currentQuestion.options.findIndex(
-                                          (option) => option.toLowerCase() === result.finalAnswer.toString().toLowerCase()
-                                    );
-                                    console.log('Calculated correct answer index:', correctAnswerIndex, 'for answer:', result.finalAnswer);
-
-                                    setAnswerResult({
-                                          ...result,
-                                          correctAnswerIndex,
-                                    });
+                                    const finalAnswerData = JSON.parse(message.body);
+                                    console.log('Final answer received:', finalAnswerData);
+                                    console.log('Final answer index:', finalAnswerData.finalAnswerIndex, 'Correct answer index:', finalAnswerData.correctAnswerIndex);
+                                    setFinalAnswer(finalAnswerData);
                               } catch (error) {
-                                    console.error('Error parsing answer result message:', error);
+                                    console.error('Error parsing final answer message:', error);
                               }
-                        });
-
-                        answerResultSubscriptionRef.current = subscription.id;
+                        }); //gowno
                   },
                   onDisconnect: () => {
                         console.log('Disconnected from WebSocket');
@@ -180,7 +152,7 @@ function QuizPage() {
 
                   <main className='w-full flex-1 p-0 lg:overflow-hidden lg:p-8'>
                         <div className='bg-quiz-white mx-auto flex h-full w-full items-stretch justify-center ps-4 pe-4 pt-1 pb-4 lg:h-full lg:rounded-[30px] lg:p-4'>
-                              <Question key={currentQuestion.id} question={currentQuestion} onAnswerSelected={handleAnswerSelected} teamSelections={teamSelections} answerResult={answerResult} />
+                              <Question key={currentQuestion.id} question={currentQuestion} onAnswerSelected={handleAnswerSelected} teamSelections={teamSelections} finalAnswer={finalAnswer} />
                         </div>
                   </main>
             </div>
