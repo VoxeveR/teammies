@@ -12,7 +12,8 @@ export type Quiz = {
 interface QuizTableProps {
       mockedQuizzes: Quiz[];
       onQuizClick?: (quiz: Quiz) => void;
-      onDeleteQuiz?: (quiz: Quiz) => void; // <--- new prop
+      onDeleteQuiz?: (quiz: Quiz) => void;
+      onStartQuiz?: (quiz: Quiz) => void;
 }
 
 const dropdownTheme = {
@@ -49,7 +50,7 @@ const dropdownTheme = {
       inlineWrapper: 'flex items-center',
 };
 
-export default function QuizTable({ mockedQuizzes, onQuizClick, onDeleteQuiz }: QuizTableProps) {
+export default function QuizTable({ mockedQuizzes, onQuizClick, onDeleteQuiz, onStartQuiz }: QuizTableProps) {
       const statusStyles = {
             Completed: 'bg-green-200 text-green-800',
             Live: 'bg-blue-200 text-blue-800',
@@ -85,7 +86,7 @@ export default function QuizTable({ mockedQuizzes, onQuizClick, onDeleteQuiz }: 
                                                       placement='bottom-start'
                                                       renderTrigger={() => <span>...</span>}
                                                 >
-                                                      <DropdownItem>Start Quiz</DropdownItem>
+                                                      <DropdownItem onClick={() => onStartQuiz?.(quiz)}>Start Quiz</DropdownItem>
                                                       <DropdownItem onClick={() => onQuizClick?.(quiz)}>Edit</DropdownItem>
                                                       <DropdownItem onClick={() => onDeleteQuiz?.(quiz)}>Delete</DropdownItem>
                                                 </Dropdown>

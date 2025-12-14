@@ -1,13 +1,14 @@
-package com.voxever.teammies.dto.quiz;
+package com.voxever.teammies.dto.quiz.rest;
+
+import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -19,6 +20,9 @@ public class UpdateQuizRequest {
     private String title;
 
     private String description;
+
+    @NotNull
+    private Integer timeLimit;
 
     private boolean published;
 

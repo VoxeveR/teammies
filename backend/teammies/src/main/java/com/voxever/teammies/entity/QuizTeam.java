@@ -1,7 +1,6 @@
 package com.voxever.teammies.entity;
 
 import java.time.Instant;
-import java.util.Date;
 import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,54 +19,41 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
-@Table(name = "quizzes")
-public class Quiz {
+@Builder
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(name = "quiz_teams")
+public class QuizTeam {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "league_id", nullable = false)
-    private League league;
+    @Column(nullable = false)
+    private String name;
 
-    @Column(length = 255, nullable = false)
-    private String title;
-
-    @Column(columnDefinition = "text")
-    private String description;
-
-    @Column(name = "quiz_date")
-    private Date quizDate;
+    @Column(nullable = false, length = 6)
+    private String joinCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", nullable = false)
-    private User createdBy;
+    @JoinColumn(name = "quiz_session_id", nullable = false)
+    private QuizSession quizSession;
 
-    @Column(nullable = false)
-    private boolean published;
+    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<QuizPlayer> players;
 
-    @Column(nullable = false)
-    private Integer timeLimit;
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
-
-    @UpdateTimestamp
-    @Column(name ="updated_at", nullable = false)
-    private Instant updatedAt;
-
-    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Question> questions;
-
-//    @OneToMany(mappedBy = "quiz")
-//    private Set<QuizSession> sessions;
 }

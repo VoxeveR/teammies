@@ -1,33 +1,58 @@
 import { useState, useEffect, useCallback } from 'react';
 import QuizTimer from './QuizTimer.tsx';
+import { type QuestionData } from '../../middleware/questionConverter';
 
-interface QuestionData {
-      id: number;
-      question: string;
-      options: string[];
-      timeLimit?: number;
-      correctAnswer?: string | string[];
-      showAnswer?: boolean;
+interface TeamSelection {
+      playerId: number;
+      playerName: string;
+      selectedIndex: number;
+      selectedOption: string;
+}
+
+interface AnswerResult {
+      questionId: number;
+      finalAnswer: string;
+      isCorrect: boolean;
+      pointsAwarded: number;
+      timestamp: string;
+      correctAnswerIndex?: number;
 }
 
 interface QuestionProps {
       question: QuestionData;
       onTimeExpired?: () => void;
+      onAnswerSelected?: (optionIndex: number, optionText: string) => void;
+      teamSelections?: TeamSelection[];
+      answerResult?: AnswerResult | null;
 }
 
 //TODO: useQuestionTimer
 //TODO: extract QuestionOption (button)
-function Question({ question, onTimeExpired }: QuestionProps) {
-      const [remainingTime, setRemainingTime] = useState<number>(0);
+function Question({ question, onTimeExpired, onAnswerSelected, teamSelections = [], answerResult }: QuestionProps) {
+      // Initialize remainingTime from question's timeLimit
+      const [remainingTime, setRemainingTime] = useState<number>(question.timeLimit || 0);
       const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
       useEffect(() => {
-            if (question.timeLimit) {
+            console.log('component data:', question);
+      }, [question]);
+
+      useEffect(() => {
+            console.log('Question changed, resetting timer. ID:', question.id, 'TimeLimit:', question.timeLimit);
+            // Reset state when new question arrives
+            if (question.timeLimit && question.timeLimit > 0) {
+                  console.log('Setting remaining time to:', question.timeLimit);
+                  setRemainingTime(question.timeLimit);
+                  setSelectedIndex(null); // Reset selected option
+            } else if (question.expiresAt) {
                   const now = Date.now();
-                  const timeLeft = Math.max(0, Math.floor((question.timeLimit - now) / 1000));
-                  setRemainingTime(timeLeft);
+                  const remainingMs = Math.max(0, question.expiresAt - now);
+                  const remainingSeconds = Math.ceil(remainingMs / 1000);
+                  console.log('Setting remaining time from expiresAt to:', remainingSeconds);
+                  setRemainingTime(remainingSeconds);
+                  setSelectedIndex(null); // Reset selected option
             }
-      }, [question.timeLimit]);
+      }, [question.id, question.timeLimit]);
 
       const handleTimeExpired = useCallback(() => {
             if (onTimeExpired) {
@@ -37,13 +62,19 @@ function Question({ question, onTimeExpired }: QuestionProps) {
       }, [onTimeExpired, question.id]);
 
       const handleOptionClick = (index: number) => {
+            // Prevent deselection - once an answer is selected, it stays selected
             if (index === selectedIndex) {
-                  setSelectedIndex(null);
                   return;
             }
 
             setSelectedIndex(index);
-            console.log('Selected option index:', index, 'Option:', question.options[index]);
+            const selectedOption = question.options[index];
+            console.log('Selected option index:', index, 'Option:', selectedOption);
+
+            // Send answer to backend
+            if (onAnswerSelected) {
+                  onAnswerSelected(index, selectedOption);
+            }
       };
 
       return (
@@ -61,25 +92,79 @@ function Question({ question, onTimeExpired }: QuestionProps) {
                               const isLong = textLen > 80;
                               const optionTextClass = isLong ? 'text-sm md:text-base lg:text-lg' : 'text-lg lg:text-5xl';
 
+                              // Find teammates who selected this option
+                              const selectorsForThisOption = teamSelections.filter((s) => s.selectedIndex === index);
+
+                              // Determine button styling based on answer result
+                              const isCorrectAnswer = answerResult && index === answerResult.correctAnswerIndex;
+                              const playerSelectedThisOption = selectedIndex === index;
+                              const playerWasWrong = answerResult && !answerResult.isCorrect;
+
+                              let buttonBgClass = 'bg-quiz-dark-green border-gray-600 text-white hover:scale-100 hover:bg-[#0a4a4d]';
+                              
+                              if (answerResult) {
+                                    // If answer result is shown
+                                    if (isCorrectAnswer) {
+                                          // This is the correct answer - always green
+                                          buttonBgClass = 'bg-quiz-green border-quiz-green text-white shadow-lg';
+                                    } else if (playerSelectedThisOption && playerWasWrong) {
+                                          // Player selected this and it was wrong - red
+                                          buttonBgClass = 'bg-red-500 border-red-600 text-white shadow-lg';
+                                    } else {
+                                          // Other options - dimmed
+                                          buttonBgClass = 'bg-quiz-dark-green border-gray-600 text-white opacity-40';
+                                    }
+                              }
+
                               return (
-                                    <button
-                                          key={index}
-                                          onClick={() => handleOptionClick(index)}
-                                          className={`box-border block w-full max-w-full min-w-0 overflow-hidden rounded-2xl border p-4 text-start transition-all duration-200 lg:h-auto ${
-                                                selectedIndex === index
-                                                      ? 'scale-103 border-white bg-[#1CABB0] text-white shadow-lg'
-                                                      : 'bg-quiz-dark-green border-gray-600 text-white hover:scale-102 hover:bg-[#0a4a4d]'
-                                          }`}
-                                    >
-                                          <span className={`${optionTextClass} wrap-break-word whitespace-normal`}>
-                                                {String.fromCharCode(65 + index)}. {option}
-                                          </span>
-                                    </button>
+                                    <div key={index} className='relative'>
+                                          <button
+                                                onClick={() => handleOptionClick(index)}
+                                                disabled={answerResult !== null}
+                                                className={`relative box-border block w-full max-w-full min-w-0 overflow-visible rounded-2xl border p-4 text-start transition-all duration-200 lg:h-full ${
+                                                      selectedIndex === index && !answerResult
+                                                            ? 'scale-100 border-white bg-[#1CABB0] text-white shadow-lg'
+                                                            : buttonBgClass
+                                                }`}
+                                          >
+                                                <span className={`${optionTextClass} wrap-break-word whitespace-normal`}>
+                                                      {String.fromCharCode(65 + index)}. {option}
+                                                </span>
+
+                                                {/* Teammate selections in top right */}
+                                                {selectorsForThisOption.length > 0 && (
+                                                      <div className='absolute top-1 right-1 flex flex-wrap gap-1 pe-2'>
+                                                            {selectorsForThisOption.map((selector) => (
+                                                                  <div
+                                                                        key={selector.playerId}
+                                                                        className='bg-quiz-green text-quiz-white flex h-6 w-6 items-center justify-center rounded-full p-5 text-xl font-bold'
+                                                                        title={selector.playerName}
+                                                                  >
+                                                                        {selector.playerName.charAt(0).toUpperCase()}
+                                                                  </div>
+                                                            ))}
+                                                      </div>
+                                                )}
+
+                                                {/* Show checkmark for correct answer */}
+                                                {isCorrectAnswer && answerResult && (
+                                                      <div className='absolute top-2 right-12 text-white text-2xl font-bold'>
+                                                            ✓
+                                                      </div>
+                                                )}
+
+                                                {/* Show X for wrong player answer */}
+                                                {playerSelectedThisOption && playerWasWrong && (
+                                                      <div className='absolute top-2 right-12 text-white text-2xl font-bold'>
+                                                            ✗
+                                                      </div>
+                                                )}
+                                          </button>
+                                    </div>
                               );
                         })}
                   </div>
 
-                  {/* small spacer on mobile so the last option isn't flush to the viewport bottom */}
                   <div className='h-6 lg:hidden' />
             </div>
       );

@@ -70,15 +70,36 @@ function QuizManagementPage() {
             fetchLeagueAndQuizzes();
       }, [leagueId]);
 
+      const handleStart = async (quizId: number) => {
+            if (!leagueId) return;
+
+            try {
+                  const response = await api.post(`/leagues/${leagueId}/quizzes/${quizId}/generate-join-code`);
+                  const sessionCode = response.data.joinCode;
+                  toast.success('Quiz session started! Redirecting...');
+
+                  navigate(`/waiting-for-start/${sessionCode}/`, { state: { generateResponse: response.data } });
+            } catch (err) {
+                  console.error(err);
+                  toast.error('Failed to start quiz.');
+            }
+      };
+
       const handleAddOrUpdateQuiz = async (payload: any, quizId?: number) => {
             if (!leagueId) return;
 
             try {
+                  // Mock timeLimit to 30 seconds for now
+                  const quizPayload = {
+                        ...payload,
+                        timeLimit: 5,
+                  };
+
                   if (quizId) {
-                        await api.put(`/leagues/${leagueId}/quizzes/${quizId}`, payload);
+                        await api.put(`/leagues/${leagueId}/quizzes/${quizId}`, quizPayload);
                         toast.success('Quiz updated successfully!');
                   } else {
-                        await api.post(`/leagues/${leagueId}/quizzes`, payload);
+                        await api.post(`/leagues/${leagueId}/quizzes`, quizPayload);
                         toast.success('Quiz created successfully!');
                   }
 
@@ -156,6 +177,7 @@ function QuizManagementPage() {
                                                                         const backendQuiz = quizzes.find((q) => q.id === quiz.id);
                                                                         if (backendQuiz) setEditingQuiz(backendQuiz);
                                                                   }}
+                                                                  onStartQuiz={(quiz: Quiz & { id: number }) => handleStart(quiz.id)}
                                                                   onDeleteQuiz={(quiz: Quiz & { id: number }) => handleDeleteQuiz(quiz)}
                                                             />
                                                       ) : (

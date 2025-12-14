@@ -1,26 +1,23 @@
-package com.voxever.teammies.dto.quiz;
+package com.voxever.teammies.dto.quiz.rest;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.util.Set;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-public class CreateQuizResponse {
+public class QuizResponse {
     private Long id;
+    private Long leagueId;
     private String title;
     private String description;
     private boolean published;
-    private Set<QuestionResponse> questions;
+    private String createdByUsername;
+
+    private Set<QuestionResponse> questions; // new field
 
     @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
     @Builder
     public static class QuestionResponse {
         private Long id;
@@ -31,13 +28,11 @@ public class CreateQuizResponse {
         private Set<AnswerOptionResponse> answerOptions;
 
         @Data
-        @NoArgsConstructor
-        @AllArgsConstructor
         @Builder
         public static class AnswerOptionResponse {
             private Long id;
             private String text;
-            private boolean correct;
+            private Boolean correct;
             private Integer position;
         }
     }
