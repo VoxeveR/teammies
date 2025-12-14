@@ -1,41 +1,55 @@
 import { useEffect, useState, memo } from 'react';
 
 interface QuizTimerProps {
-      initialTime: number; // Initial remaining time in seconds
-      onTimeExpired?: () => void; // Callback when timer reaches 0
+      initialTime: number;
+      onTimeExpired?: () => void;
 }
 
 function QuizTimer({ initialTime, onTimeExpired }: QuizTimerProps) {
       const [timeRemaining, setTimeRemaining] = useState<number>(initialTime);
 
       useEffect(() => {
+            // Reset timer when initialTime changes
             setTimeRemaining(initialTime);
       }, [initialTime]);
 
       useEffect(() => {
-            if (timeRemaining <= 0) {
+            if (initialTime <= 0) {
                   if (onTimeExpired) {
                         onTimeExpired();
                   }
                   return;
             }
 
-            const interval = setInterval(() => {
-                  setTimeRemaining((prev) => {
-                        const newTime = prev - 1;
-                        if (newTime <= 0) {
-                              clearInterval(interval);
-                              if (onTimeExpired) {
-                                    onTimeExpired();
-                              }
-                              return 0;
-                        }
-                        return newTime;
-                  });
-            }, 1000);
+            // Start the countdown
+            let interval: ReturnType<typeof setInterval>;
 
-            return () => clearInterval(interval);
-      }, [timeRemaining, onTimeExpired]);
+            const startCountdown = () => {
+                  interval = setInterval(() => {
+                        setTimeRemaining((prev) => {
+                              const nextTime = prev - 1;
+
+                              if (nextTime <= 0) {
+                                    clearInterval(interval);
+                                    if (onTimeExpired) {
+                                          onTimeExpired();
+                                    }
+                                    return 0;
+                              }
+
+                              return nextTime;
+                        });
+                  }, 1000);
+            };
+
+            startCountdown();
+
+            return () => {
+                  if (interval) {
+                        clearInterval(interval);
+                  }
+            };
+      }, [initialTime, onTimeExpired]);
 
       return (
             <div className='w-full'>
@@ -50,4 +64,4 @@ function QuizTimer({ initialTime, onTimeExpired }: QuizTimerProps) {
       );
 }
 
-export default memo(QuizTimer);
+export default QuizTimer;

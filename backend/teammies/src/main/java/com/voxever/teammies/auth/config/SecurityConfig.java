@@ -44,8 +44,16 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/auth/register").permitAll()
-                        .requestMatchers("/oauth2/**").permitAll()
+                        .requestMatchers("/api/leagues/*/quizzes/join").permitAll()
+                        .requestMatchers("/api/quiz-sessions/*/teams").permitAll()
+                        .requestMatchers("/api/quiz-sessions/teams/*").permitAll()
+                        .requestMatchers("/api/quiz-sessions/*/teams/*/members").permitAll()
+                        .requestMatchers("/api/quiz-sessions/*/teams/join").permitAll()
+                        .requestMatchers("/api/quiz-sessions/*").permitAll()
+
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/ws-quiz").permitAll()
+                      //  .requestMatchers("/oauth2/**").permitAll()
                         .anyRequest().authenticated())
 //                .oauth2Login(oauth2 -> {
 //                    oauth2.successHandler(oauth2LoginSuccessHandler);

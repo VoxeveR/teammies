@@ -1,9 +1,9 @@
 package com.voxever.teammies.service;
 
-import com.voxever.teammies.dto.quiz.CreateQuizRequest;
-import com.voxever.teammies.dto.quiz.CreateQuizResponse;
-import com.voxever.teammies.dto.quiz.QuizResponse;
-import com.voxever.teammies.dto.quiz.UpdateQuizRequest;
+import com.voxever.teammies.dto.quiz.rest.CreateQuizRequest;
+import com.voxever.teammies.dto.quiz.rest.CreateQuizResponse;
+import com.voxever.teammies.dto.quiz.rest.QuizResponse;
+import com.voxever.teammies.dto.quiz.rest.UpdateQuizRequest;
 import com.voxever.teammies.entity.*;
 import com.voxever.teammies.repository.LeagueRepository;
 import com.voxever.teammies.repository.QuizRepository;
@@ -37,6 +37,7 @@ public class QuizService {
                 .league(league)
                 .title(request.getTitle())
                 .description(request.getDescription())
+                .timeLimit(request.getTimeLimit())
                 .published(request.isPublished())
                 .createdBy(user)
                 .questions(new HashSet<>()) // initialize to prevent NPE
@@ -191,6 +192,7 @@ public class QuizService {
         // Update basic quiz info
         quiz.setTitle(request.getTitle());
         quiz.setDescription(request.getDescription());
+        quiz.setTimeLimit(request.getTimeLimit());
         quiz.setPublished(request.isPublished());
 
         // Update questions in place to avoid orphanRemoval exception

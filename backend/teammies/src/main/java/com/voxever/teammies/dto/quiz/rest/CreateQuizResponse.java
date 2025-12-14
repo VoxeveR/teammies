@@ -1,8 +1,5 @@
-package com.voxever.teammies.dto.quiz;
+package com.voxever.teammies.dto.quiz.rest;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,47 +11,33 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CreateQuizRequest {
-    @NotBlank
-    @Size(max = 255)
+public class CreateQuizResponse {
+    private Long id;
     private String title;
-
     private String description;
-
     private boolean published;
-
-    private Set<QuestionDto> questions;
+    private Set<QuestionResponse> questions;
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class QuestionDto {
-        @NotBlank
+    public static class QuestionResponse {
+        private Long id;
         private String text;
-
-        @NotBlank
         private String questionType;
-
-        @NotNull
         private Integer points;
-
-        @NotNull
         private Integer position;
-
-        private Set<AnswerOptionDto> answerOptions;
+        private Set<AnswerOptionResponse> answerOptions;
 
         @Data
         @NoArgsConstructor
         @AllArgsConstructor
         @Builder
-        public static class AnswerOptionDto {
-            @NotBlank
+        public static class AnswerOptionResponse {
+            private Long id;
             private String text;
-
             private boolean correct;
-
-            @NotNull
             private Integer position;
         }
     }

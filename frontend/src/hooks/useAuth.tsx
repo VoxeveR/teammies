@@ -41,12 +41,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                               setAccessToken(accessToken);
                               setIsAuthenticated(true);
                               return { success: true };
-                        } else if (response.status === 401) {
-                              return { success: false, message: 'Invalid username or password!' };
-                        }
-                        return { success: false, message: 'Login failed!' };
+                        } else return { success: false, message: 'Login failed!' };
                   })
                   .catch((error) => {
+                        if (error.response.status === 401) {
+                              return { success: false, message: 'Invalid username or password!' };
+                        }
                         console.log(error);
                         return { success: false, message: `Can't connect to server! Try again later.` };
                   });

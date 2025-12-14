@@ -4,9 +4,7 @@ import './index.css';
 import App from './App.tsx';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import QuizPage from './pages/QuizPage.tsx';
-//import QuizJoin from './pages/QuizJoin.tsx';
 import ErrorPage from './pages/ErrorPage.tsx';
-import Navbar from './components/general/Navbar.tsx';
 import { Suspense } from 'react';
 import React from 'react';
 import WaitingPage from './pages/WaitingPage.tsx';
@@ -18,6 +16,7 @@ import { AuthProvider } from './hooks/useAuth.tsx';
 import { Toaster } from 'react-hot-toast';
 import AuthenticatedRoute from './middleware/AuthenticatedRoute.tsx';
 import QuizManagementPage from './pages/QuizManagementPage.tsx';
+import AdminWaitingPage from './pages/AdminWaitingPage.tsx';
 
 const QuizJoinPage = React.lazy(() => import('./pages/QuizJoinPage.tsx'));
 
@@ -54,8 +53,12 @@ const router = createBrowserRouter([
                         },
                   },
                   {
-                        path: 'quiz',
+                        path: 'quiz/:sessionCode/:teamCode/:playerId',
                         element: <QuizPage />,
+                  },
+                  {
+                        path: 'waiting-for-start/:sessionCode',
+                        element: <AdminWaitingPage />,
                   },
                   {
                         path: 'join',
@@ -70,7 +73,7 @@ const router = createBrowserRouter([
                         ),
                   },
                   {
-                        path: 'waiting',
+                        path: 'quiz/:sessionCode/:teamCode/waiting-for-start',
                         element: <WaitingPage></WaitingPage>,
                   },
                   {
@@ -82,7 +85,7 @@ const router = createBrowserRouter([
                         element: <RegisterPage></RegisterPage>,
                   },
                   {
-                        path: 'team',
+                        path: 'quiz/:sessionCode/team-join',
                         element: <TeamPage></TeamPage>,
                   },
             ],

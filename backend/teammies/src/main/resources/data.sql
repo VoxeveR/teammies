@@ -48,8 +48,8 @@ INSERT INTO league_standings (id, league_id, team_id, points, matches_played, cr
 VALUES (6, 1, 6, 0, 5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- ===== Quizzes =====
-INSERT INTO quizzes (id, league_id, title, description, created_by, published, created_at, updated_at)
-VALUES (1, 1, 'PK QUIZ 1', 'Mocked quiz', 10000, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO quizzes (id, league_id, title, description, time_limit, created_by, published, created_at, updated_at)
+VALUES (1, 1, 'PK QUIZ 1', 'Mocked quiz', 5, 10000, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
-INSERT INTO quizzes (id, league_id, title, description, created_by, published, created_at, updated_at)
-VALUES (2, 1, 'PK QUIZ 2', 'Mocked quiz', 10000, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO quizzes (id, league_id, title, description, time_limit, created_by, published, created_at, updated_at)
+VALUES (2, 1, 'PK QUIZ 2', 'Mocked quiz', 5, 10000, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
