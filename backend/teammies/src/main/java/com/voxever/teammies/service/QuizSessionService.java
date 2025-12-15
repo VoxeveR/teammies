@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.http.HttpStatus;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -18,6 +19,7 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.voxever.teammies.dto.quiz.QuizResultDto;
 import com.voxever.teammies.dto.quiz.events.QuestionEventDto;
 import com.voxever.teammies.dto.quiz.events.QuizEventType;
 import com.voxever.teammies.dto.quiz.rest.GenerateJoinCodeResponse;
@@ -26,20 +28,25 @@ import com.voxever.teammies.dto.quiz.rest.JoinQuizResponse;
 import com.voxever.teammies.dto.quiz.rest.StartQuizResponse;
 import com.voxever.teammies.dto.quiz.rest.TeamWithPlayersDto;
 import com.voxever.teammies.dto.quiz.websocket.FinalTeamAnswerDto;
+import com.voxever.teammies.entity.AnswerOption;
+import com.voxever.teammies.entity.League;
+import com.voxever.teammies.entity.LeagueStanding;
 import com.voxever.teammies.entity.Question;
 import com.voxever.teammies.entity.Quiz;
 import com.voxever.teammies.entity.QuizPlayer;
 import com.voxever.teammies.entity.QuizSession;
 import com.voxever.teammies.entity.QuizTeam;
+import com.voxever.teammies.entity.Team;
 import com.voxever.teammies.entity.TeamAnswer;
 import com.voxever.teammies.entity.User;
-import com.voxever.teammies.entity.AnswerOption;
+import com.voxever.teammies.repository.LeagueStandingRepository;
 import com.voxever.teammies.repository.QuestionRepository;
 import com.voxever.teammies.repository.QuizPlayerRepository;
 import com.voxever.teammies.repository.QuizRepository;
 import com.voxever.teammies.repository.QuizSessionRepository;
 import com.voxever.teammies.repository.QuizTeamRepository;
 import com.voxever.teammies.repository.TeamAnswerRepository;
+import com.voxever.teammies.repository.TeamRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -52,6 +59,8 @@ public class QuizSessionService {
     private final QuizPlayerRepository quizPlayerRepository;
     private final QuestionRepository questionRepository;
     private final TeamAnswerRepository teamAnswerRepository;
+    private final LeagueStandingRepository leagueStandingRepository;
+    private final TeamRepository teamRepository;
     private final Random random = new Random();
     private final QuizSessionWebSocketBroadcasts webSocketService;
     private final TaskScheduler taskScheduler;
@@ -62,6 +71,8 @@ public class QuizSessionService {
                               QuizPlayerRepository quizPlayerRepository,
                               QuestionRepository questionRepository,
                               TeamAnswerRepository teamAnswerRepository,
+                              LeagueStandingRepository leagueStandingRepository,
+                              TeamRepository teamRepository,
                               QuizSessionWebSocketBroadcasts webSocketService,
                               TaskScheduler taskScheduler) {
         this.quizSessionRepository = quizSessionRepository;
@@ -70,6 +81,8 @@ public class QuizSessionService {
         this.quizPlayerRepository = quizPlayerRepository;
         this.questionRepository = questionRepository;
         this.teamAnswerRepository = teamAnswerRepository;
+        this.leagueStandingRepository = leagueStandingRepository;
+        this.teamRepository = teamRepository;
         this.webSocketService = webSocketService;
         this.taskScheduler = taskScheduler;
     }
@@ -258,6 +271,78 @@ public class QuizSessionService {
                 .min(Comparator.comparingInt(Question::getPosition));
 
         if (nextQuestionOpt.isEmpty()) {
+            // Quiz has ended - calculate and broadcast results
+            List<QuizTeam> quizTeams = quizTeamRepository.findByQuizSessionId(session.getId());
+            
+            // Get all question IDs from current quiz for filtering
+            Set<Long> quizQuestionIds = quiz.getQuestions().stream()
+                    .map(Question::getId)
+                    .collect(Collectors.toSet());
+            
+            // Build a map of question ID -> correct answer text
+            Map<Long, String> correctAnswers = quiz.getQuestions().stream()
+                    .collect(Collectors.toMap(
+                            Question::getId,
+                            q -> q.getAnswerOptions().stream()
+                                    .filter(AnswerOption::getCorrect)
+                                    .map(AnswerOption::getText)
+                                    .findFirst()
+                                    .orElse(null)
+                    ));
+            
+            // Calculate points for each team based on correct answers in this quiz
+            List<QuizResultDto> results = quizTeams.stream()
+                    .map(quizTeam -> {
+                        long correctCount = teamAnswerRepository.findByTeamId(quizTeam.getId()).stream()
+                                .filter(answer -> {
+                                    // Use the precomputed correct answers map
+                                    Long questionId = answer.getQuestion().getId();
+                                    if (!quizQuestionIds.contains(questionId)) return false;
+                                    
+                                    String correctText = correctAnswers.get(questionId);
+                                    return answer.getFinalAnswer() != null && answer.getFinalAnswer().equals(correctText);
+                                })
+                                .count();
+                        int points = (int) (correctCount * 10); // 10 points per correct answer
+                        return new QuizResultDto(quizTeam.getId(), quizTeam.getName(), points);
+                    })
+                    .sorted((a, b) -> Integer.compare(b.getPoints(), a.getPoints())) // Sort by points descending
+                    .collect(Collectors.toList());
+            
+            // Add position to each result
+            List<QuizResultDto> resultsWithPosition = IntStream.range(0, results.size())
+                    .mapToObj(i -> {
+                        QuizResultDto result = results.get(i);
+                        result.setPosition(i + 1);
+                        return result;
+                    })
+                    .collect(Collectors.toList());
+            
+            webSocketService.broadcastQuizResults(sessionJoinCode, resultsWithPosition);
+            
+            // Update LeagueStanding with quiz results
+            League league = quiz.getLeague();
+            for (QuizResultDto result : resultsWithPosition) {
+                // Find the persistent Team by league and quizTeam name
+                Team team = teamRepository.findByLeagueAndName(league, result.getTeamName())
+                        .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Team not found"));
+                
+                // Find existing LeagueStanding or create new one
+                LeagueStanding standing = leagueStandingRepository.findByLeagueAndTeam(league, team)
+                        .orElse(LeagueStanding.builder()
+                                .league(league)
+                                .team(team)
+                                .points(0)
+                                .matchesPlayed(0)
+                                .build());
+                
+                // Update points and match count
+                standing.setPoints(standing.getPoints() + result.getPoints());
+                standing.setMatchesPlayed(standing.getMatchesPlayed() + 1);
+                
+                leagueStandingRepository.save(standing);
+            }
+            
             webSocketService.broadcastQuizEnded(sessionJoinCode);
             session.setStatus(QuizSession.SessionStatus.FINISHED);
             quizSessionRepository.save(session);
@@ -416,9 +501,9 @@ public class QuizSessionService {
         }
 
         // Determine final answer based on voting logic
-        String finalAnswer = null;
-        Integer finalAnswerIndex = null;
-        String decisionMethod = null;
+        String finalAnswer;
+        Integer finalAnswerIndex;
+        String decisionMethod;
 
         if (voteCount.isEmpty()) {
             // No votes cast - set answer to null with RANDOM method
@@ -483,11 +568,23 @@ public class QuizSessionService {
                 .orElse(null);
 
         String correctAnswer = correctOption != null ? correctOption.getText() : null;
-        Integer correctAnswerIndex = correctOption != null ? correctOption.getPosition() : null;
-        // If finalAnswer is null, isCorrect should be false
+        
+
+        Integer correctAnswerIndex = null;
+        if (correctOption != null) {
+            List<AnswerOption> sortedOptions = question.getAnswerOptions().stream()
+                    .sorted(Comparator.comparingInt(AnswerOption::getPosition))
+                    .collect(Collectors.toList());
+            correctAnswerIndex = IntStream.range(0, sortedOptions.size())
+                    .filter(i -> sortedOptions.get(i).getId().equals(correctOption.getId()))
+                    .findFirst()
+                    .orElse(-1);
+        }
+        
+
         Boolean isCorrect = finalAnswer != null && correctAnswer != null && finalAnswer.equals(correctAnswer);
 
-        // Build and return the DTO for broadcasting to frontend
+
         FinalTeamAnswerDto finalTeamAnswerDto = FinalTeamAnswerDto.builder()
                 .teamId(teamId)
                 .teamName(team.getName())

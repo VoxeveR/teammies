@@ -1,9 +1,11 @@
-// QuizSessionWebSocketService.java
 package com.voxever.teammies.service;
+
+import java.util.List;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import com.voxever.teammies.dto.quiz.QuizResultDto;
 import com.voxever.teammies.dto.quiz.events.PlayerJoinedEvent;
 import com.voxever.teammies.dto.quiz.events.QuestionEventDto;
 import com.voxever.teammies.dto.quiz.events.QuizEventType;
@@ -93,6 +95,14 @@ public class QuizSessionWebSocketBroadcasts {
         messagingTemplate.convertAndSend(
                 "/topic/quiz-session/" + sessionJoinCode + "/team/" + teamCode + "/final-answer",
                 finalAnswer
+        );
+    }
+
+    public void broadcastQuizResults(String sessionJoinCode, List<QuizResultDto> results) {
+        log.info("Broadcasting quiz results for session: {} with {} teams", sessionJoinCode, results.size());
+        messagingTemplate.convertAndSend(
+                "/topic/quiz-session/" + sessionJoinCode + "/results",
+                results
         );
     }
 }

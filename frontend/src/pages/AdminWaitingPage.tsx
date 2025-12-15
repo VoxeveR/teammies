@@ -24,7 +24,7 @@ function AdminWaitingPage() {
       const params = useParams();
       const navigate = useNavigate();
       const [sessionTeams, setSessionTeams] = useState<Team[]>([]);
-
+      const [isQuizRunning, setIsQuizRunning] = useState(false);
       function copyToClipboard(text: string) {
             navigator.clipboard.writeText(text);
             toast.success('Copied to clipboard!');
@@ -81,6 +81,18 @@ function AdminWaitingPage() {
                                     console.error('Error parsing message:', error);
                               }
                         });
+
+                        // Subscribe to quiz results
+                        stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/results`, (message) => {
+                              try {
+                                    const results = JSON.parse(message.body);
+                                    console.log('Quiz results received:', results);
+                                    // Redirect to results page
+                                    navigate(`/quiz-results/${params.sessionCode}`, { state: { results } });
+                              } catch (error) {
+                                    console.error('Error parsing results message:', error);
+                              }
+                        });
                   },
                   onDisconnect: () => {
                         console.log('Disconnected from WebSocket');
@@ -122,6 +134,7 @@ function AdminWaitingPage() {
             try {
                   const response = await api.post(`/quiz-sessions/${params.sessionCode}/start`);
                   console.log('Quiz started:', response.data);
+                  setIsQuizRunning(true);
                   toast.success('Quiz started!');
             } catch (error) {
                   console.error('Failed to start quiz:', error);
@@ -136,7 +149,7 @@ function AdminWaitingPage() {
                               <img src='/src/assets/logo.svg' className='h-32 w-32 animate-spin [animation-duration:1.5s] lg:h-32 lg:w-32' />
                         </div>
 
-                        <div className='text-quiz-dark-green text-6xl'>WAITING FOR PLAYERS</div>
+                        <div className='text-quiz-dark-green text-6xl'>{isQuizRunning ? 'QUIZ IN PROGRESS' : 'WAITING FOR PLAYERS'}</div>
                         <div className='flex flex-col justify-center'>
                               <div className='text-quiz-green text-center text-xl'>Quiz code</div>
                               <div className='bg-quiz-dark-green text-quiz-white flex gap-2 rounded-xl p-4'>
@@ -147,9 +160,13 @@ function AdminWaitingPage() {
                               </div>
                         </div>
                         <div className='text-quiz-light-green text-3xl'>Participants ({sessionTeams.length})</div>
-                        <button onClick={handleStartQuiz} className='button'>
-                              Start Quiz
-                        </button>
+                        {isQuizRunning ? (
+                              <div className='text-quiz-green text-2xl font-bold'>Quiz is now running...</div>
+                        ) : (
+                              <button onClick={handleStartQuiz} className='button'>
+                                    Start Quiz
+                              </button>
+                        )}
                         <div className='flex flex-col gap-2'>
                               {sessionTeams.length === 0 ? (
                                     <p className='text-gray-400'>Waiting for teams to join...</p>

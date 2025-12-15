@@ -1,6 +1,6 @@
 import Question from '../components/quiz/Question.tsx';
 import QuizHeader from '../components/quiz/QuizHeader.tsx';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useQuizSessionData } from '../hooks/useQuizSessionData';
 import * as StompJs from '@stomp/stompjs';
@@ -16,6 +16,7 @@ interface TeamSelection {
 function QuizPage() {
       const location = useLocation();
       const params = useParams();
+      const navigate = useNavigate();
       const { quizData } = useQuizSessionData();
       const [currentQuestion, setCurrentQuestion] = useState<QuestionData | null>(null);
       const [questionNumber, setQuestionNumber] = useState(1);
@@ -82,7 +83,19 @@ function QuizPage() {
                               } catch (error) {
                                     console.error('Error parsing final answer message:', error);
                               }
-                        }); //gowno
+                        });
+
+                        // Subscribe to quiz results
+                        stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/results`, (message) => {
+                              try {
+                                    const results = JSON.parse(message.body);
+                                    console.log('Quiz results received:', results);
+                                    // Redirect to results page with results data
+                                    navigate(`/quiz-results/${params.sessionCode}`, { state: { results } });
+                              } catch (error) {
+                                    console.error('Error parsing results message:', error);
+                              }
+                        });
                   },
                   onDisconnect: () => {
                         console.log('Disconnected from WebSocket');
