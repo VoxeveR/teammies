@@ -238,7 +238,8 @@ public class QuizSessionService {
             try {
                 FinalTeamAnswerDto finalAnswer = calculateAndSaveFinalTeamAnswer(team.getId(), currentQuestion.getId());
 
-                // Broadcast the final answer to the team
+                // Broadcast the final answer to the team using the team's join code
+                // team is already fetched from DB for this session, so join code is correct for this session
                 webSocketService.broadcastFinalAnswer(sessionJoinCode, team.getJoinCode(), finalAnswer);
             } catch (Exception e) {
                 System.err.println("Error calculating final answer for team " + team.getId() + ": " + e.getMessage());
@@ -323,24 +324,33 @@ public class QuizSessionService {
             // Update LeagueStanding with quiz results
             League league = quiz.getLeague();
             for (QuizResultDto result : resultsWithPosition) {
-                // Find the persistent Team by league and quiz team name
-                Team team = teamRepository.findByLeagueAndName(league, getQuizTeamName(result.getTeamId()))
-                        .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Team not found in league"));
-                
-                // Find existing LeagueStanding or create new one
-                LeagueStanding standing = leagueStandingRepository.findByLeagueAndTeam(league, team)
-                        .orElse(LeagueStanding.builder()
-                                .league(league)
-                                .team(team)
-                                .points(0)
-                                .matchesPlayed(0)
-                                .build());
-                
-                // Update points and match count
-                standing.setPoints(standing.getPoints() + result.getPoints());
-                standing.setMatchesPlayed(standing.getMatchesPlayed() + 1);
-                
-                leagueStandingRepository.save(standing);
+                try {
+                    // Get the quiz team to retrieve its name
+                    QuizTeam quizTeam = quizTeamRepository.findById(result.getTeamId())
+                            .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Quiz team not found"));
+                    
+                    // Find the persistent Team by league and quiz team name
+                    Team team = teamRepository.findByLeagueAndName(league, quizTeam.getName())
+                            .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Team not found in league: " + quizTeam.getName()));
+                    
+                    // Find existing LeagueStanding or create new one
+                    LeagueStanding standing = leagueStandingRepository.findByLeagueAndTeam(league, team)
+                            .orElse(LeagueStanding.builder()
+                                    .league(league)
+                                    .team(team)
+                                    .points(0)
+                                    .matchesPlayed(0)
+                                    .build());
+                    
+                    // Update points and match count
+                    standing.setPoints(standing.getPoints() + result.getPoints());
+                    standing.setMatchesPlayed(standing.getMatchesPlayed() + 1);
+                    
+                    leagueStandingRepository.save(standing);
+                } catch (Exception e) {
+                    // Log error but continue with other teams
+                    System.err.println("Error updating LeagueStanding for team " + result.getTeamId() + ": " + e.getMessage());
+                }
             }
             
             webSocketService.broadcastQuizEnded(sessionJoinCode);
@@ -599,15 +609,6 @@ public class QuizSessionService {
                 .build();
 
         return finalTeamAnswerDto;
-    }
-
-    /**
-     * Helper method to get the quiz team name by team ID
-     */
-    private String getQuizTeamName(Long teamId) {
-        return quizTeamRepository.findById(teamId)
-                .map(QuizTeam::getName)
-                .orElse(null);
     }
 }
 

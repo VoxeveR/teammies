@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuizSessionData } from '../hooks/useQuizSessionData';
 import * as StompJs from '@stomp/stompjs';
 import { convertBackendQuestion, type QuestionData, type BackendQuestionData } from '../middleware/questionConverter';
+import api from '../middleware/api';
 
 interface TeamSelection {
       playerId: number;

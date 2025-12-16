@@ -17,9 +17,7 @@ function QuizResultsPage() {
             const resultsData = location.state?.results;
             if (resultsData) {
                   // Sort by position to ensure correct order
-                  const sortedResults = Array.isArray(resultsData)
-                        ? [...resultsData].sort((a, b) => a.position - b.position)
-                        : [];
+                  const sortedResults = Array.isArray(resultsData) ? [...resultsData].sort((a, b) => a.position - b.position) : [];
                   setResults(sortedResults);
                   console.log('Quiz results:', sortedResults);
             }
@@ -50,13 +48,7 @@ function QuizResultsPage() {
                                           <div
                                                 key={team.teamId}
                                                 className={`rounded-lg p-6 text-white shadow-lg transition-all ${
-                                                      team.position === 1
-                                                            ? 'bg-yellow-500 scale-105'
-                                                            : team.position === 2
-                                                            ? 'bg-gray-400'
-                                                            : team.position === 3
-                                                            ? 'bg-orange-500'
-                                                            : 'bg-gray-700'
+                                                      team.position === 1 ? 'scale-105 bg-yellow-500' : team.position === 2 ? 'bg-gray-400' : team.position === 3 ? 'bg-orange-500' : 'bg-gray-700'
                                                 }`}
                                           >
                                                 <div className='flex items-center justify-between'>

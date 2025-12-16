@@ -8,10 +8,10 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.voxever.teammies.dto.quiz.websocket.FinalAnswerCalculationRequest;
+import com.voxever.teammies.dto.quiz.websocket.FinalTeamAnswerDto;
 import com.voxever.teammies.dto.quiz.websocket.HighlightSelectionDto;
 import com.voxever.teammies.dto.quiz.websocket.PlayerSelectionDto;
-import com.voxever.teammies.dto.quiz.websocket.FinalTeamAnswerDto;
-import com.voxever.teammies.dto.quiz.websocket.FinalAnswerCalculationRequest;
 import com.voxever.teammies.entity.QuizPlayer;
 import com.voxever.teammies.entity.QuizSession;
 import com.voxever.teammies.entity.QuizTeam;
@@ -62,8 +62,8 @@ public class QuizWebSocketController {
         QuizSession session = quizSessionRepository.findByJoinCode(sessionJoinCode)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Quiz session not found"));
 
-        QuizTeam team = quizTeamRepository.findByJoinCode(teamCode)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Team not found"));
+        QuizTeam team = quizTeamRepository.findByJoinCodeAndQuizSession(teamCode, session)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Team not found in this session"));
 
         // Validate player exists
         QuizPlayer player = quizPlayerRepository.findById(answerPayload.getPlayerId())
