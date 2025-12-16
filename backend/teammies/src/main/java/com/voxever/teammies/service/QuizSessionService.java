@@ -323,9 +323,9 @@ public class QuizSessionService {
             // Update LeagueStanding with quiz results
             League league = quiz.getLeague();
             for (QuizResultDto result : resultsWithPosition) {
-                // Find the persistent Team by league and quizTeam name
-                Team team = teamRepository.findByLeagueAndName(league, result.getTeamName())
-                        .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Team not found"));
+                // Find the persistent Team by league and quiz team name
+                Team team = teamRepository.findByLeagueAndName(league, getQuizTeamName(result.getTeamId()))
+                        .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Team not found in league"));
                 
                 // Find existing LeagueStanding or create new one
                 LeagueStanding standing = leagueStandingRepository.findByLeagueAndTeam(league, team)
@@ -501,9 +501,9 @@ public class QuizSessionService {
         }
 
         // Determine final answer based on voting logic
-        String finalAnswer;
-        Integer finalAnswerIndex;
-        String decisionMethod;
+        String finalAnswer = null;
+        Integer finalAnswerIndex = null;
+        String decisionMethod = null;
 
         if (voteCount.isEmpty()) {
             // No votes cast - set answer to null with RANDOM method
@@ -599,6 +599,15 @@ public class QuizSessionService {
                 .build();
 
         return finalTeamAnswerDto;
+    }
+
+    /**
+     * Helper method to get the quiz team name by team ID
+     */
+    private String getQuizTeamName(Long teamId) {
+        return quizTeamRepository.findById(teamId)
+                .map(QuizTeam::getName)
+                .orElse(null);
     }
 }
 
