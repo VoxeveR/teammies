@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuizSessionData } from '../hooks/useQuizSessionData';
 import * as StompJs from '@stomp/stompjs';
 import { convertBackendQuestion, type QuestionData, type BackendQuestionData } from '../middleware/questionConverter';
-import api from '../middleware/api';
+import toast from 'react-hot-toast';
 
 interface TeamSelection {
       playerId: number;
@@ -52,6 +52,10 @@ function QuizPage() {
                                           // Clear team selections and final answer for new question
                                           setTeamSelections([]);
                                           setFinalAnswer(null);
+                                    } else if (event.eventType === 'SESSION_CLOSED') {
+                                          console.log('Session closed event');
+                                          toast.error('Quiz session has been closed by admin!');
+                                          navigate('/join');
                                     }
                               } catch (error) {
                                     console.error('Error parsing question message:', error);

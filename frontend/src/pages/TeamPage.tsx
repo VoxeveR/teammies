@@ -1,8 +1,9 @@
 import axios from 'axios';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import useQuizSessionData from '../hooks/useQuizSessionData';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import * as StompJs from '@stomp/stompjs';
 
 function TeamPage() {
       const [teamName, setTeamName] = useState('');
@@ -11,6 +12,48 @@ function TeamPage() {
       const params = useParams();
 
       const navigate = useNavigate();
+      const stompClientRef = useRef<StompJs.Client | null>(null);
+
+      useEffect(() => {
+            if (!params.sessionCode) return;
+
+            const stompClient = new StompJs.Client({
+                  brokerURL: 'ws://localhost:8080/ws-quiz',
+                  onConnect: () => {
+                        console.log('Connected to WebSocket');
+
+                        stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/events`, (message) => {
+                              try {
+                                    const event = JSON.parse(message.body);
+                                    console.log('Received event:', event);
+
+                                    if (event.eventType === 'SESSION_CLOSED') {
+                                          console.log('Session closed event');
+                                          toast.error('Quiz session has been closed by admin!');
+                                          navigate('/join');
+                                    }
+                              } catch (error) {
+                                    console.error('Error parsing event message:', error);
+                              }
+                        });
+                  },
+                  onDisconnect: () => {
+                        console.log('Disconnected from WebSocket');
+                  },
+                  onStompError: (frame) => {
+                        console.error('STOMP Error:', frame.body);
+                  },
+            });
+
+            stompClientRef.current = stompClient;
+            stompClient.activate();
+
+            return () => {
+                  if (stompClientRef.current?.active) {
+                        stompClientRef.current.deactivate();
+                  }
+            };
+      }, [params.sessionCode, navigate]);
       function handleCreateTeam() {
             if (!teamName.trim()) {
                   toast.error('Please fill in all fields!');

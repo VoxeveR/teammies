@@ -76,6 +76,10 @@ function AdminWaitingPage() {
                                                             : team
                                                 )
                                           );
+                                    } else if (event.eventType === 'SESSION_CLOSED') {
+                                          console.log('Session closed event');
+                                          toast.success('Quiz session has been closed!');
+                                          navigate('/join');
                                     }
                               } catch (error) {
                                     console.error('Error parsing message:', error);
@@ -87,7 +91,7 @@ function AdminWaitingPage() {
                               try {
                                     const results = JSON.parse(message.body);
                                     console.log('Quiz results received:', results);
-                                    // Redirect to results page
+                                    // Redirect to results page with results data
                                     navigate(`/quiz-results/${params.sessionCode}`, { state: { results } });
                               } catch (error) {
                                     console.error('Error parsing results message:', error);
@@ -142,6 +146,21 @@ function AdminWaitingPage() {
             }
       }
 
+      async function handleCloseQuiz() {
+            if (!params.sessionCode) return;
+
+            try {
+                  const response = await api.post(`/quiz-sessions/${params.sessionCode}/close`);
+                  console.log('Quiz closed:', response.data);
+                  toast.success('Quiz session closed!');
+                  // Navigate back to join page
+                  navigate('/leagues');
+            } catch (error) {
+                  console.error('Failed to close quiz:', error);
+                  toast.error('Failed to close quiz');
+            }
+      }
+
       return (
             <div className='flex h-screen w-full flex-col items-center justify-center-safe'>
                   <div className='bg-quiz-white flex h-128 w-fit flex-col items-center gap-8 rounded-lg p-10 shadow-md'>
@@ -163,9 +182,14 @@ function AdminWaitingPage() {
                         {isQuizRunning ? (
                               <div className='text-quiz-green text-2xl font-bold'>Quiz is now running...</div>
                         ) : (
-                              <button onClick={handleStartQuiz} className='button'>
-                                    Start Quiz
-                              </button>
+                              <div className='flex flex-col gap-4'>
+                                    <button onClick={handleStartQuiz} className='button'>
+                                          Start Quiz
+                                    </button>
+                                    <button onClick={handleCloseQuiz} className='rounded-lg bg-red-600 px-4 py-2 font-bold text-white transition-colors hover:bg-red-700'>
+                                          Close Quiz
+                                    </button>
+                              </div>
                         )}
                         <div className='flex flex-col gap-2'>
                               {sessionTeams.length === 0 ? (

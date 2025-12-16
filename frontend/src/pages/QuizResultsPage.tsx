@@ -1,4 +1,4 @@
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
 interface TeamResult {
@@ -11,17 +11,22 @@ interface TeamResult {
 function QuizResultsPage() {
       const location = useLocation();
       const params = useParams();
+      const navigate = useNavigate();
       const [results, setResults] = useState<TeamResult[]>([]);
 
       useEffect(() => {
             const resultsData = location.state?.results;
+
+            // Redirect to leagues
+            navigate('/leagues');
+
             if (resultsData) {
                   // Sort by position to ensure correct order
                   const sortedResults = Array.isArray(resultsData) ? [...resultsData].sort((a, b) => a.position - b.position) : [];
                   setResults(sortedResults);
                   console.log('Quiz results:', sortedResults);
             }
-      }, [location.state]);
+      }, [location.state, navigate]);
 
       const getMedalEmoji = (position: number) => {
             switch (position) {

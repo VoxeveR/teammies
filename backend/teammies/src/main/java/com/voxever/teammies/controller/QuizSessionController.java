@@ -2,7 +2,6 @@ package com.voxever.teammies.controller;
 
 import java.util.List;
 
-import com.voxever.teammies.service.QuizTeamService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -24,6 +23,7 @@ import com.voxever.teammies.dto.team.JoinTeamResponse;
 import com.voxever.teammies.dto.team.TeamMembersDto;
 import com.voxever.teammies.entity.User;
 import com.voxever.teammies.service.QuizSessionService;
+import com.voxever.teammies.service.QuizTeamService;
 
 import jakarta.validation.Valid;
 
@@ -45,6 +45,13 @@ public class QuizSessionController {
             @PathVariable String sessionJoinCode,
             @AuthenticationPrincipal User user) {
         return quizSessionService.startQuiz(sessionJoinCode, user);
+    }
+
+    @PostMapping("/{sessionJoinCode}/close")
+    public ResponseEntity<Void> closeQuizSession(
+            @PathVariable String sessionJoinCode,
+            @AuthenticationPrincipal User user) {
+        return quizSessionService.closeQuizSession(sessionJoinCode, user);
     }
 
 

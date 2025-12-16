@@ -43,7 +43,11 @@ function WaitingPage() {
                                     const firstQuestion = JSON.parse(message.body);
                                     console.log('Quiz started with first question:', firstQuestion);
 
-                                    if (firstQuestion.id || firstQuestion.questionId) {
+                                    if (firstQuestion.eventType === 'SESSION_CLOSED') {
+                                          console.log('Session closed event');
+                                          toast.error('Quiz session has been closed by admin!');
+                                          navigate('/join');
+                                    } else if (firstQuestion.id || firstQuestion.questionId) {
                                           navigate(`/quiz/${params.sessionCode}/${params.teamCode}/${quizData.quizPlayerId}`, {
                                                 state: { firstQuestion },
                                           });

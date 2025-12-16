@@ -610,5 +610,23 @@ public class QuizSessionService {
 
         return finalTeamAnswerDto;
     }
+
+    @Transactional
+    public ResponseEntity<Void> closeQuizSession(String sessionJoinCode, User user) {
+        QuizSession session = quizSessionRepository.findByJoinCode(sessionJoinCode)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Quiz session not found"));
+
+        if (!session.getQuiz().getCreatedBy().getUserId().equals(user.getUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the quiz creator can close the session");
+        }
+
+        session.setStatus(QuizSession.SessionStatus.FINISHED);
+        quizSessionRepository.save(session);
+
+        // Broadcast to all members that the session is closed
+        webSocketService.broadcastSessionClosed(sessionJoinCode);
+
+        return ResponseEntity.ok().build();
+    }
 }
 

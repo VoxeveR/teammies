@@ -105,4 +105,24 @@ public class QuizSessionWebSocketBroadcasts {
                 results
         );
     }
+
+    public void broadcastSessionClosed(String sessionJoinCode) {
+        log.info("Broadcasting session closed for session: {}", sessionJoinCode);
+        
+        PlayerJoinedEvent event = PlayerJoinedEvent.builder()
+                .eventType(QuizEventType.SESSION_CLOSED)
+                .build();
+
+        // Broadcast to all members in the session
+        messagingTemplate.convertAndSend(
+                "/topic/quiz-session/" + sessionJoinCode + "/events",
+                event
+        );
+
+        // Also broadcast to admin
+        messagingTemplate.convertAndSend(
+                "/topic/quiz-session/" + sessionJoinCode + "/admin/events",
+                event
+        );
+    }
 }
