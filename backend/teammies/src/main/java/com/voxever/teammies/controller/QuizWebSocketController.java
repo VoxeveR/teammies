@@ -1,12 +1,16 @@
 package com.voxever.teammies.controller;
 
+import org.springframework.context.event.EventListener;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpAttributesContextHolder;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import com.voxever.teammies.dto.quiz.websocket.FinalAnswerCalculationRequest;
 import com.voxever.teammies.dto.quiz.websocket.FinalTeamAnswerDto;
@@ -23,6 +27,9 @@ import com.voxever.teammies.service.QuizSessionService;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Slf4j
 @Controller
 public class QuizWebSocketController {
@@ -33,6 +40,9 @@ public class QuizWebSocketController {
     private final QuizPlayerRepository quizPlayerRepository;
     private final QuizTeamRepository quizTeamRepository;
     private final QuizSessionService quizSessionService;
+
+    // Map to track WebSocket session ID -> (playerId, sessionJoinCode)
+    private final Map<String, PlayerSessionInfo> playerSessionMap = new HashMap<>();
 
     public QuizWebSocketController(SimpMessagingTemplate messagingTemplate,
                                    QuizSessionRepository quizSessionRepository,
@@ -48,16 +58,29 @@ public class QuizWebSocketController {
         this.quizSessionService = quizSessionService;
     }
 
+    // Inner class to store player session info
+    private static class PlayerSessionInfo {
+        Long playerId;
+        String sessionJoinCode;
+
+        PlayerSessionInfo(Long playerId, String sessionJoinCode) {
+            this.playerId = playerId;
+            this.sessionJoinCode = sessionJoinCode;
+        }
+    }
+
     @MessageMapping("/quiz-session/{sessionJoinCode}/team/{teamCode}/answer")
     public void handleTeamAnswer(
             @DestinationVariable String sessionJoinCode,
             @DestinationVariable String teamCode,
-            @Payload HighlightSelectionDto answerPayload) {
+            @Payload HighlightSelectionDto answerPayload,
+            SimpMessageHeaderAccessor headerAccessor) {
 
         log.info("Player {} selected option: {} for question {}",
                 answerPayload.getPlayerId(),
                 answerPayload.getSelectedOption(),
                 answerPayload.getQuestionId());
+
 
         QuizSession session = quizSessionRepository.findByJoinCode(sessionJoinCode)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Quiz session not found"));

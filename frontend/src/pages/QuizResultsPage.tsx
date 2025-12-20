@@ -17,9 +17,6 @@ function QuizResultsPage() {
       useEffect(() => {
             const resultsData = location.state?.results;
 
-            // Redirect to leagues
-            navigate('/leagues');
-
             if (resultsData) {
                   // Sort by position to ensure correct order
                   const sortedResults = Array.isArray(resultsData) ? [...resultsData].sort((a, b) => a.position - b.position) : [];

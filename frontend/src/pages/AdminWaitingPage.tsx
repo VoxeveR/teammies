@@ -25,6 +25,7 @@ function AdminWaitingPage() {
       const navigate = useNavigate();
       const [sessionTeams, setSessionTeams] = useState<Team[]>([]);
       const [isQuizRunning, setIsQuizRunning] = useState(false);
+      const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
       function copyToClipboard(text: string) {
             navigator.clipboard.writeText(text);
             toast.success('Copied to clipboard!');
@@ -163,46 +164,84 @@ function AdminWaitingPage() {
 
       return (
             <div className='flex h-screen w-full flex-col items-center justify-center-safe'>
-                  <div className='bg-quiz-white flex h-128 w-fit flex-col items-center gap-8 rounded-lg p-10 shadow-md'>
+                  <div className='bg-quiz-white flex h-screen w-full flex-col items-center gap-8 rounded-lg p-10 shadow-md lg:h-168 lg:w-fit'>
                         <div className='flex w-full flex-row justify-evenly'>
                               <img src='/src/assets/logo.svg' className='h-32 w-32 animate-spin [animation-duration:1.5s] lg:h-32 lg:w-32' />
                         </div>
 
-                        <div className='text-quiz-dark-green text-6xl'>{isQuizRunning ? 'QUIZ IN PROGRESS' : 'WAITING FOR PLAYERS'}</div>
-                        <div className='flex flex-col justify-center'>
-                              <div className='text-quiz-green text-center text-xl'>Quiz code</div>
-                              <div className='bg-quiz-dark-green text-quiz-white flex gap-2 rounded-xl p-4'>
-                                    <div className='flex flex-col justify-center text-xl'>{params.sessionCode}</div>
-                                    <div className='w-fit cursor-pointer'>
-                                          <FontAwesomeIcon icon={faCopy} className='text-3xl' onClick={() => copyToClipboard(params.sessionCode!)} />
-                                    </div>
-                              </div>
-                        </div>
-                        <div className='text-quiz-light-green text-3xl'>Participants ({sessionTeams.length})</div>
+                        <div className='text-quiz-dark-green text-3xl lg:text-6xl'>{isQuizRunning ? 'Quiz in progress!' : 'Waiting for players...'}</div>
+                        <div className='text-quiz-green -mb-8 text-center text-xl'>Quiz code</div>
                         {isQuizRunning ? (
                               <div className='text-quiz-green text-2xl font-bold'>Quiz is now running...</div>
                         ) : (
-                              <div className='flex flex-col gap-4'>
-                                    <button onClick={handleStartQuiz} className='button'>
+                              <div className='flex flex-row items-center justify-center gap-4'>
+                                    <button onClick={handleStartQuiz} className='button lg:w-40!'>
                                           Start Quiz
                                     </button>
-                                    <button onClick={handleCloseQuiz} className='rounded-lg bg-red-600 px-4 py-2 font-bold text-white transition-colors hover:bg-red-700'>
+                                    <div className='flex flex-col justify-between'>
+                                          <div className='bg-quiz-dark-green text-quiz-white flex gap-2 rounded-xl p-4'>
+                                                <div className='flex flex-col justify-center text-xl'>{params.sessionCode}</div>
+                                                <div className='w-fit cursor-pointer'>
+                                                      <FontAwesomeIcon icon={faCopy} className='text-3xl' onClick={() => copyToClipboard(params.sessionCode!)} />
+                                                </div>
+                                          </div>
+                                    </div>
+                                    <button onClick={handleCloseQuiz} className='button border-red-600! bg-red-600! text-white hover:bg-red-700! lg:w-40!'>
                                           Close Quiz
                                     </button>
                               </div>
                         )}
-                        <div className='flex flex-col gap-2'>
-                              {sessionTeams.length === 0 ? (
-                                    <p className='text-gray-400'>Waiting for teams to join...</p>
-                              ) : (
-                                    sessionTeams.map((team: Team) => (
-                                          <div key={team.teamId} className='text-quiz-dark-green'>
-                                                <div className='font-bold'>{team.teamName}</div>
-                                                <div className='text-sm text-gray-600'>Players: {team.players.length}</div>
-                                          </div>
-                                    ))
-                              )}
+                        <div className='text-quiz-light-green text-3xl'>Team count ({sessionTeams.length})</div>
+
+                        <div className='scrollbar w-full overflow-y-auto lg:max-h-64'>
+                              <div className='grid grid-cols-1 gap-4 px-4 lg:grid-cols-2'>
+                                    {sessionTeams.length === 0 ? (
+                                          <p className='text-gray-400'>Waiting for teams to join...</p>
+                                    ) : (
+                                          sessionTeams.map((team: Team) => (
+                                                <div
+                                                      key={team.teamId}
+                                                      className='text-quiz-white bg-quiz-green hover:bg-quiz-dark-green cursor-pointer rounded-lg p-3 transition-colors'
+                                                      onClick={() => setSelectedTeam(team)}
+                                                >
+                                                      <div className='font-bold'>{team.teamName}</div>
+                                                      <div className='text-sm'>Players: {team.players.length}</div>
+                                                </div>
+                                          ))
+                                    )}
+                              </div>
                         </div>
+
+                        {/* Team Members Modal */}
+                        {selectedTeam && (
+                              <div className='fixed inset-0 z-50 flex items-center justify-center' onClick={() => setSelectedTeam(null)}>
+                                    <div className='bg-quiz-white border-quiz-dark-green mx-4 w-full max-w-md rounded-lg border-2 p-6 shadow-lg' onClick={(e) => e.stopPropagation()}>
+                                          <div className='mb-4 flex items-center justify-between'>
+                                                <h2 className='text-quiz-dark-green text-2xl font-bold'>{selectedTeam.teamName}</h2>
+                                                <button onClick={() => setSelectedTeam(null)} className='text-2xl text-gray-400 hover:text-gray-600'>
+                                                      ×
+                                                </button>
+                                          </div>
+                                          <div className='flex flex-col gap-2'>
+                                                {selectedTeam.players.length === 0 ? (
+                                                      <p className='text-gray-400'>No players yet...</p>
+                                                ) : (
+                                                      selectedTeam.players
+                                                            .sort((a, b) => {
+                                                                  if (a.captain === b.captain) return 0;
+                                                                  return a.captain ? -1 : 1;
+                                                            })
+                                                            .map((player) => (
+                                                                  <div key={player.playerId} className='bg-quiz-green text-quiz-white flex items-center gap-2 rounded p-2'>
+                                                                        {player.captain && <span>👑</span>}
+                                                                        <span className='font-semibold'>{player.playerUsername}</span>
+                                                                  </div>
+                                                            ))
+                                                )}
+                                          </div>
+                                    </div>
+                              </div>
+                        )}
                   </div>
             </div>
       );

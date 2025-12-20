@@ -15,9 +15,9 @@ export interface TeamData {
 }
 
 export interface QuizPlayer {
-      quizPlayerId: number;
+      playerId: number;
       nickname: string;
-      isCaptain: boolean;
+      captain: boolean;
 }
 
 export interface QuizSessionData {
