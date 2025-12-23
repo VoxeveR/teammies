@@ -100,13 +100,15 @@ public class AuthService {
 
         authManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
 
-        String jwtToken = jwtService.generateToken(userRepo.findByEmail(email).get().getUserId());
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(email);
         Optional<User> user = userRepo.findByEmail(email);
-        String username = "";
-        if(user.isPresent()){
-            username = user.get().getUsername();
+        if(user.isEmpty()){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+
+        User authenticatedUser = user.get();
+        String jwtToken = jwtService.generateToken(authenticatedUser.getUserId());
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(email);
+        String username = authenticatedUser.getUsername();
 
         long maxAgeSeconds = (refreshToken.getExpiresAt().toEpochMilli() - System.currentTimeMillis()) / 1000;
 

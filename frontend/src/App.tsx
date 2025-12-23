@@ -1,4 +1,3 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Navbar from './components/general/Navbar';
 import FeatureCard from './components/general/FeatureCard';
 import { faCog, faMedal, faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
