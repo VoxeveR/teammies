@@ -1,10 +1,11 @@
 import Question from '../components/quiz/Question.tsx';
 import QuizHeader from '../components/quiz/QuizHeader.tsx';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useQuizSessionData } from '../hooks/useQuizSessionData';
 import * as StompJs from '@stomp/stompjs';
 import { convertBackendQuestion, type QuestionData, type BackendQuestionData } from '../middleware/questionConverter';
+import toast from 'react-hot-toast';
 
 interface TeamSelection {
       playerId: number;
@@ -13,30 +14,21 @@ interface TeamSelection {
       selectedOption: string;
 }
 
-interface AnswerResult {
-      questionId: number;
-      finalAnswer: string;
-      isCorrect: boolean;
-      pointsAwarded: number;
-      timestamp: string;
-      correctAnswerIndex?: number;
-}
-
 function QuizPage() {
       const location = useLocation();
       const params = useParams();
+      const navigate = useNavigate();
       const { quizData } = useQuizSessionData();
       const [currentQuestion, setCurrentQuestion] = useState<QuestionData | null>(null);
       const [questionNumber, setQuestionNumber] = useState(1);
       const [questionCount, setQuestionCount] = useState(1);
       const [teamSelections, setTeamSelections] = useState<TeamSelection[]>([]);
-      const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
+      const [finalAnswer, setFinalAnswer] = useState<any>(null);
 
       // Get playerId from params or from quizData as fallback
       const playerId = params.playerId || quizData.quizPlayerId;
 
       const stompClientRef = useRef<StompJs.Client | null>(null);
-      const answerResultSubscriptionRef = useRef<string | null>(null);
 
       useEffect(() => {
             if (!params.sessionCode || !params.teamCode) return;
@@ -57,9 +49,13 @@ function QuizPage() {
                                           setCurrentQuestion(convertedQuestion);
                                           setQuestionNumber(event.position || 1);
                                           setQuestionCount(event.totalQuestions || 1);
-                                          // Clear team selections and answer result for new question
+                                          // Clear team selections and final answer for new question
                                           setTeamSelections([]);
-                                          setAnswerResult(null);
+                                          setFinalAnswer(null);
+                                    } else if (event.eventType === 'SESSION_CLOSED') {
+                                          console.log('Session closed event');
+                                          toast.error('Quiz session has been closed by admin!');
+                                          navigate('/join');
                                     }
                               } catch (error) {
                                     console.error('Error parsing question message:', error);
@@ -82,35 +78,29 @@ function QuizPage() {
                               }
                         });
 
-                        // Subscribe to answer results
-                        const subscription = stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/team/${params.teamCode}/answer-result`, (message) => {
+                        // Subscribe to final answers
+                        stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/team/${params.teamCode}/final-answer`, (message) => {
                               try {
-                                    const result = JSON.parse(message.body);
-                                    console.log('Answer result received:', result, 'Current question ID:', currentQuestion?.id);
-
-                                    // Only process if this result is for the current question
-                                    if (!currentQuestion || result.questionId !== currentQuestion.id) {
-                                          console.log('Ignoring answer result - not for current question');
-                                          return;
-                                    }
-
-                                    // Find the correct answer index by matching the finalAnswer text against options
-                                    let correctAnswerIndex = -1;
-                                    correctAnswerIndex = currentQuestion.options.findIndex(
-                                          (option) => option.toLowerCase() === result.finalAnswer.toString().toLowerCase()
-                                    );
-                                    console.log('Calculated correct answer index:', correctAnswerIndex, 'for answer:', result.finalAnswer);
-
-                                    setAnswerResult({
-                                          ...result,
-                                          correctAnswerIndex,
-                                    });
+                                    const finalAnswerData = JSON.parse(message.body);
+                                    console.log('Final answer received:', finalAnswerData);
+                                    console.log('Final answer index:', finalAnswerData.finalAnswerIndex, 'Correct answer index:', finalAnswerData.correctAnswerIndex);
+                                    setFinalAnswer(finalAnswerData);
                               } catch (error) {
-                                    console.error('Error parsing answer result message:', error);
+                                    console.error('Error parsing final answer message:', error);
                               }
                         });
 
-                        answerResultSubscriptionRef.current = subscription.id;
+                        // Subscribe to quiz results
+                        stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/results`, (message) => {
+                              try {
+                                    const results = JSON.parse(message.body);
+                                    console.log('Quiz results received:', results);
+                                    // Redirect to results page with results data
+                                    navigate(`/quiz-results/${params.sessionCode}`, { state: { results } });
+                              } catch (error) {
+                                    console.error('Error parsing results message:', error);
+                              }
+                        });
                   },
                   onDisconnect: () => {
                         console.log('Disconnected from WebSocket');
@@ -180,7 +170,7 @@ function QuizPage() {
 
                   <main className='w-full flex-1 p-0 lg:overflow-hidden lg:p-8'>
                         <div className='bg-quiz-white mx-auto flex h-full w-full items-stretch justify-center ps-4 pe-4 pt-1 pb-4 lg:h-full lg:rounded-[30px] lg:p-4'>
-                              <Question key={currentQuestion.id} question={currentQuestion} onAnswerSelected={handleAnswerSelected} teamSelections={teamSelections} answerResult={answerResult} />
+                              <Question key={currentQuestion.id} question={currentQuestion} onAnswerSelected={handleAnswerSelected} teamSelections={teamSelections} finalAnswer={finalAnswer} />
                         </div>
                   </main>
             </div>

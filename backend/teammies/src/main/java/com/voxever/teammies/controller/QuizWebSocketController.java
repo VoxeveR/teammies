@@ -1,13 +1,19 @@
 package com.voxever.teammies.controller;
 
+import org.springframework.context.event.EventListener;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.simp.SimpAttributesContextHolder;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
+import com.voxever.teammies.dto.quiz.websocket.FinalAnswerCalculationRequest;
+import com.voxever.teammies.dto.quiz.websocket.FinalTeamAnswerDto;
 import com.voxever.teammies.dto.quiz.websocket.HighlightSelectionDto;
 import com.voxever.teammies.dto.quiz.websocket.PlayerSelectionDto;
 import com.voxever.teammies.entity.QuizPlayer;
@@ -17,8 +23,12 @@ import com.voxever.teammies.repository.QuizPlayerRepository;
 import com.voxever.teammies.repository.QuizRepository;
 import com.voxever.teammies.repository.QuizSessionRepository;
 import com.voxever.teammies.repository.QuizTeamRepository;
+import com.voxever.teammies.service.QuizSessionService;
 
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Controller
@@ -29,40 +39,64 @@ public class QuizWebSocketController {
     private final QuizRepository quizRepository;
     private final QuizPlayerRepository quizPlayerRepository;
     private final QuizTeamRepository quizTeamRepository;
+    private final QuizSessionService quizSessionService;
+
+    // Map to track WebSocket session ID -> (playerId, sessionJoinCode)
+    private final Map<String, PlayerSessionInfo> playerSessionMap = new HashMap<>();
 
     public QuizWebSocketController(SimpMessagingTemplate messagingTemplate,
                                    QuizSessionRepository quizSessionRepository,
                                    QuizRepository quizRepository,
                                    QuizPlayerRepository quizPlayerRepository,
-                                   QuizTeamRepository quizTeamRepository) {
+                                   QuizTeamRepository quizTeamRepository,
+                                   QuizSessionService quizSessionService) {
         this.messagingTemplate = messagingTemplate;
         this.quizSessionRepository = quizSessionRepository;
         this.quizRepository = quizRepository;
         this.quizPlayerRepository = quizPlayerRepository;
         this.quizTeamRepository = quizTeamRepository;
+        this.quizSessionService = quizSessionService;
+    }
+
+    // Inner class to store player session info
+    private static class PlayerSessionInfo {
+        Long playerId;
+        String sessionJoinCode;
+
+        PlayerSessionInfo(Long playerId, String sessionJoinCode) {
+            this.playerId = playerId;
+            this.sessionJoinCode = sessionJoinCode;
+        }
     }
 
     @MessageMapping("/quiz-session/{sessionJoinCode}/team/{teamCode}/answer")
     public void handleTeamAnswer(
             @DestinationVariable String sessionJoinCode,
             @DestinationVariable String teamCode,
-            @Payload HighlightSelectionDto answerPayload) {
+            @Payload HighlightSelectionDto answerPayload,
+            SimpMessageHeaderAccessor headerAccessor) {
 
         log.info("Player {} selected option: {} for question {}",
                 answerPayload.getPlayerId(),
                 answerPayload.getSelectedOption(),
                 answerPayload.getQuestionId());
 
+
         QuizSession session = quizSessionRepository.findByJoinCode(sessionJoinCode)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Quiz session not found"));
 
-        QuizTeam team = quizTeamRepository.findByJoinCode(teamCode)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Team not found"));
+        QuizTeam team = quizTeamRepository.findByJoinCodeAndQuizSession(teamCode, session)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Team not found in this session"));
 
         // Validate player exists
         QuizPlayer player = quizPlayerRepository.findById(answerPayload.getPlayerId())
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Player not found"));
 
+        // Store the player's current selection
+        player.setCurrentQuestionId(answerPayload.getQuestionId());
+        player.setCurrentHighlight(answerPayload.getSelectedOption());
+        player.setCurrentHighlightIndex(answerPayload.getSelectedIndex());
+        quizPlayerRepository.save(player);
 
         // Build player selection event to broadcast to all
         PlayerSelectionDto selectionEvent = PlayerSelectionDto.builder()
@@ -78,6 +112,32 @@ public class QuizWebSocketController {
         messagingTemplate.convertAndSend(
                 "/topic/quiz-session/" + sessionJoinCode + "/team/" + teamCode + "/selection",
                 selectionEvent
+        );
+    }
+
+    @MessageMapping("/quiz-session/{sessionJoinCode}/team/{teamCode}/calculate-final-answer")
+    public void calculateAndBroadcastFinalAnswer(
+            @DestinationVariable String sessionJoinCode,
+            @DestinationVariable String teamCode,
+            @Payload FinalAnswerCalculationRequest request) {
+
+        log.info("Calculating final answer for team: {}, question: {}",
+                request.getTeamId(),
+                request.getQuestionId());
+
+        QuizSession session = quizSessionRepository.findByJoinCode(sessionJoinCode)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Quiz session not found"));
+
+        // Calculate final team answer and persist to database
+        FinalTeamAnswerDto finalAnswer = quizSessionService.calculateAndSaveFinalTeamAnswer(
+                request.getTeamId(),
+                request.getQuestionId()
+        );
+
+        // Broadcast final answer to all players in the team
+        messagingTemplate.convertAndSend(
+                "/topic/quiz-session/" + sessionJoinCode + "/team/" + teamCode + "/final-answer",
+                finalAnswer
         );
     }
 }

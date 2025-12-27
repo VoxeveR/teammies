@@ -4,6 +4,7 @@ import './index.css';
 import App from './App.tsx';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import QuizPage from './pages/QuizPage.tsx';
+import QuizResultsPage from './pages/QuizResultsPage.tsx';
 import ErrorPage from './pages/ErrorPage.tsx';
 import { Suspense } from 'react';
 import React from 'react';
@@ -55,6 +56,10 @@ const router = createBrowserRouter([
                   {
                         path: 'quiz/:sessionCode/:teamCode/:playerId',
                         element: <QuizPage />,
+                  },
+                  {
+                        path: 'quiz-results/:sessionCode',
+                        element: <QuizResultsPage />,
                   },
                   {
                         path: 'waiting-for-start/:sessionCode',

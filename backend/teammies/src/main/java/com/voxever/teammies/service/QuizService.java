@@ -1,22 +1,31 @@
 package com.voxever.teammies.service;
 
-import com.voxever.teammies.dto.quiz.rest.CreateQuizRequest;
-import com.voxever.teammies.dto.quiz.rest.CreateQuizResponse;
-import com.voxever.teammies.dto.quiz.rest.QuizResponse;
-import com.voxever.teammies.dto.quiz.rest.UpdateQuizRequest;
-import com.voxever.teammies.entity.*;
-import com.voxever.teammies.repository.LeagueRepository;
-import com.voxever.teammies.repository.QuizRepository;
-import jakarta.transaction.Transactional;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import com.voxever.teammies.dto.quiz.rest.CreateQuizRequest;
+import com.voxever.teammies.dto.quiz.rest.CreateQuizResponse;
+import com.voxever.teammies.dto.quiz.rest.QuizResponse;
+import com.voxever.teammies.dto.quiz.rest.UpdateQuizRequest;
+import com.voxever.teammies.entity.AnswerOption;
+import com.voxever.teammies.entity.League;
+import com.voxever.teammies.entity.Question;
+import com.voxever.teammies.entity.Quiz;
+import com.voxever.teammies.entity.User;
+import com.voxever.teammies.repository.LeagueRepository;
+import com.voxever.teammies.repository.QuizRepository;
 
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import jakarta.transaction.Transactional;
 
 @Service
 public class QuizService {
@@ -90,6 +99,7 @@ public class QuizService {
                     Set<CreateQuizResponse.QuestionResponse.AnswerOptionResponse> answerResponses =
                             q.getAnswerOptions() != null
                                     ? q.getAnswerOptions().stream()
+                                    .sorted(Comparator.comparingInt(AnswerOption::getPosition))
                                     .map(a -> CreateQuizResponse.QuestionResponse.AnswerOptionResponse.builder()
                                             .id(a.getId())
                                             .text(a.getText())
@@ -129,6 +139,7 @@ public class QuizService {
                 Set<QuizResponse.QuestionResponse.AnswerOptionResponse> options =
                         ques.getAnswerOptions() != null
                                 ? ques.getAnswerOptions().stream()
+                                .sorted(Comparator.comparingInt(AnswerOption::getPosition))
                                 .map(a -> QuizResponse.QuestionResponse.AnswerOptionResponse.builder()
                                         .id(a.getId())
                                         .text(a.getText())

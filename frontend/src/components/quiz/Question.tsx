@@ -9,26 +9,17 @@ interface TeamSelection {
       selectedOption: string;
 }
 
-interface AnswerResult {
-      questionId: number;
-      finalAnswer: string;
-      isCorrect: boolean;
-      pointsAwarded: number;
-      timestamp: string;
-      correctAnswerIndex?: number;
-}
-
 interface QuestionProps {
       question: QuestionData;
       onTimeExpired?: () => void;
       onAnswerSelected?: (optionIndex: number, optionText: string) => void;
       teamSelections?: TeamSelection[];
-      answerResult?: AnswerResult | null;
+      finalAnswer?: any;
 }
 
 //TODO: useQuestionTimer
 //TODO: extract QuestionOption (button)
-function Question({ question, onTimeExpired, onAnswerSelected, teamSelections = [], answerResult }: QuestionProps) {
+function Question({ question, onTimeExpired, onAnswerSelected, teamSelections = [], finalAnswer }: QuestionProps) {
       // Initialize remainingTime from question's timeLimit
       const [remainingTime, setRemainingTime] = useState<number>(question.timeLimit || 0);
       const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -95,37 +86,37 @@ function Question({ question, onTimeExpired, onAnswerSelected, teamSelections = 
                               // Find teammates who selected this option
                               const selectorsForThisOption = teamSelections.filter((s) => s.selectedIndex === index);
 
-                              // Determine button styling based on answer result
-                              const isCorrectAnswer = answerResult && index === answerResult.correctAnswerIndex;
-                              const playerSelectedThisOption = selectedIndex === index;
-                              const playerWasWrong = answerResult && !answerResult.isCorrect;
+                              // Check if this is the final answer and determine styling
+                              const isFinalAnswerOption = finalAnswer && finalAnswer.finalAnswerIndex === index;
+                              const isCorrectAnswerOption = finalAnswer && finalAnswer.correctAnswerIndex === index;
+                              const isFinalAnswerCorrect = finalAnswer && finalAnswer.isCorrect;
+                              const hasCorrectAnswer = finalAnswer && finalAnswer.correctAnswerIndex !== null && finalAnswer.correctAnswerIndex !== undefined;
 
-                              let buttonBgClass = 'bg-quiz-dark-green border-gray-600 text-white hover:scale-100 hover:bg-[#0a4a4d]';
-                              
-                              if (answerResult) {
-                                    // If answer result is shown
-                                    if (isCorrectAnswer) {
-                                          // This is the correct answer - always green
-                                          buttonBgClass = 'bg-quiz-green border-quiz-green text-white shadow-lg';
-                                    } else if (playerSelectedThisOption && playerWasWrong) {
-                                          // Player selected this and it was wrong - red
-                                          buttonBgClass = 'bg-red-500 border-red-600 text-white shadow-lg';
+                              let buttonColor = 'bg-quiz-dark-green border-gray-600 text-white hover:scale-100 hover:bg-[#0a4a4d]';
+
+                              if (isFinalAnswerOption) {
+                                    if (isFinalAnswerCorrect) {
+                                          // Answer is good - highlight green
+                                          buttonColor = 'scale-100 border-white bg-green-500 text-white shadow-lg';
+                                    } else if (hasCorrectAnswer) {
+                                          // Answer is bad - highlight orange
+                                          buttonColor = 'scale-100 border-white bg-orange-500 text-white shadow-lg';
                                     } else {
-                                          // Other options - dimmed
-                                          buttonBgClass = 'bg-quiz-dark-green border-gray-600 text-white opacity-40';
+                                          // No correct answer provided - highlight red
+                                          buttonColor = 'scale-100 border-white bg-red-600 text-white shadow-lg';
                                     }
+                              } else if (isCorrectAnswerOption && finalAnswer && !finalAnswer.isCorrect) {
+                                    // Show correct answer when answer was wrong
+                                    buttonColor = 'scale-100 border-white bg-green-500 text-white shadow-lg';
+                              } else if (selectedIndex === index) {
+                                    buttonColor = 'scale-100 border-white bg-[#1CABB0] text-white shadow-lg';
                               }
 
                               return (
                                     <div key={index} className='relative'>
                                           <button
                                                 onClick={() => handleOptionClick(index)}
-                                                disabled={answerResult !== null}
-                                                className={`relative box-border block w-full max-w-full min-w-0 overflow-visible rounded-2xl border p-4 text-start transition-all duration-200 lg:h-full ${
-                                                      selectedIndex === index && !answerResult
-                                                            ? 'scale-100 border-white bg-[#1CABB0] text-white shadow-lg'
-                                                            : buttonBgClass
-                                                }`}
+                                                className={`relative box-border block w-full max-w-full min-w-0 overflow-visible rounded-2xl border p-4 text-start transition-all duration-200 lg:h-full ${buttonColor}`}
                                           >
                                                 <span className={`${optionTextClass} wrap-break-word whitespace-normal`}>
                                                       {String.fromCharCode(65 + index)}. {option}
@@ -143,20 +134,6 @@ function Question({ question, onTimeExpired, onAnswerSelected, teamSelections = 
                                                                         {selector.playerName.charAt(0).toUpperCase()}
                                                                   </div>
                                                             ))}
-                                                      </div>
-                                                )}
-
-                                                {/* Show checkmark for correct answer */}
-                                                {isCorrectAnswer && answerResult && (
-                                                      <div className='absolute top-2 right-12 text-white text-2xl font-bold'>
-                                                            ✓
-                                                      </div>
-                                                )}
-
-                                                {/* Show X for wrong player answer */}
-                                                {playerSelectedThisOption && playerWasWrong && (
-                                                      <div className='absolute top-2 right-12 text-white text-2xl font-bold'>
-                                                            ✗
                                                       </div>
                                                 )}
                                           </button>

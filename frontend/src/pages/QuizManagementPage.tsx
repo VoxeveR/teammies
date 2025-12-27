@@ -51,6 +51,7 @@ function QuizManagementPage() {
 
                         const rankingResp = await api.get<LeagueStanding[]>(`/leagues/${leagueId}/ranking`);
                         setStandings(rankingResp.data);
+                        console.log(rankingResp.data);
                   } catch (err: any) {
                         if (err.response?.status === 404) {
                               toast.error('League not found');

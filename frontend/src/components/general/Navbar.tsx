@@ -23,6 +23,10 @@ function Navbar({ elements = [], showMobile = true }: NavbarProps) {
       const authItems: NavItem[] = isAuthenticated
             ? [
                     {
+                          label: 'Leagues',
+                          linkTo: '/leagues',
+                    },
+                    {
                           label: 'Logout',
                           onClick: async () => {
                                 await logout();

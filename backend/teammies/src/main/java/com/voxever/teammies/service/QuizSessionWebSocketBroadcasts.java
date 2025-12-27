@@ -1,13 +1,16 @@
-// QuizSessionWebSocketService.java
 package com.voxever.teammies.service;
+
+import java.util.List;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import com.voxever.teammies.dto.quiz.QuizResultDto;
 import com.voxever.teammies.dto.quiz.events.PlayerJoinedEvent;
+import com.voxever.teammies.dto.quiz.events.QuestionEventDto;
 import com.voxever.teammies.dto.quiz.events.QuizEventType;
 import com.voxever.teammies.dto.quiz.events.TeamJoinedEvent;
-import com.voxever.teammies.dto.quiz.events.QuestionEventDto;
+import com.voxever.teammies.dto.quiz.websocket.FinalTeamAnswerDto;
 import com.voxever.teammies.entity.QuizPlayer;
 import com.voxever.teammies.entity.QuizTeam;
 
@@ -84,6 +87,42 @@ public class QuizSessionWebSocketBroadcasts {
         messagingTemplate.convertAndSend(
                 "/topic/quiz-session/" + sessionJoinCode + "/events",
                 questionEvent
+        );
+    }
+
+    public void broadcastFinalAnswer(String sessionJoinCode, String teamCode, FinalTeamAnswerDto finalAnswer) {
+        log.info("Broadcasting final answer for team {} in session: {}", teamCode, sessionJoinCode);
+        messagingTemplate.convertAndSend(
+                "/topic/quiz-session/" + sessionJoinCode + "/team/" + teamCode + "/final-answer",
+                finalAnswer
+        );
+    }
+
+    public void broadcastQuizResults(String sessionJoinCode, List<QuizResultDto> results) {
+        log.info("Broadcasting quiz results for session: {} with {} teams", sessionJoinCode, results.size());
+        messagingTemplate.convertAndSend(
+                "/topic/quiz-session/" + sessionJoinCode + "/results",
+                results
+        );
+    }
+
+    public void broadcastSessionClosed(String sessionJoinCode) {
+        log.info("Broadcasting session closed for session: {}", sessionJoinCode);
+        
+        PlayerJoinedEvent event = PlayerJoinedEvent.builder()
+                .eventType(QuizEventType.SESSION_CLOSED)
+                .build();
+
+        // Broadcast to all members in the session
+        messagingTemplate.convertAndSend(
+                "/topic/quiz-session/" + sessionJoinCode + "/events",
+                event
+        );
+
+        // Also broadcast to admin
+        messagingTemplate.convertAndSend(
+                "/topic/quiz-session/" + sessionJoinCode + "/admin/events",
+                event
         );
     }
 }
