@@ -9,11 +9,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PlayerJoinedEvent {
-    private Long playerId;
-    private String playerUsername;
+public class TeamJoinedEventDto {
     private Long teamId;
     private String teamName;
-    private Boolean isCaptain;
+    private String teamJoinCode;
+    private Integer memberCount;
     private QuizEventType eventType;
 }

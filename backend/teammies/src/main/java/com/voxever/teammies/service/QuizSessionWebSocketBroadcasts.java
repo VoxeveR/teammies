@@ -5,11 +5,11 @@ import java.util.List;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import com.voxever.teammies.dto.quiz.QuizResultDto;
-import com.voxever.teammies.dto.quiz.events.PlayerJoinedEvent;
+import com.voxever.teammies.dto.quiz.websocket.QuizResultDto;
+import com.voxever.teammies.dto.quiz.events.PlayerJoinedEventDto;
 import com.voxever.teammies.dto.quiz.events.QuestionEventDto;
 import com.voxever.teammies.dto.quiz.events.QuizEventType;
-import com.voxever.teammies.dto.quiz.events.TeamJoinedEvent;
+import com.voxever.teammies.dto.quiz.events.TeamJoinedEventDto;
 import com.voxever.teammies.dto.quiz.websocket.FinalTeamAnswerDto;
 import com.voxever.teammies.entity.QuizPlayer;
 import com.voxever.teammies.entity.QuizTeam;
@@ -29,7 +29,7 @@ public class QuizSessionWebSocketBroadcasts {
     public void broadcastTeamCreated(String sessionJoinCode, QuizTeam team) {
         log.info("Broadcasting team created: {} for session: {}", team.getName(), sessionJoinCode);
         
-        TeamJoinedEvent event = TeamJoinedEvent.builder()
+        TeamJoinedEventDto event = TeamJoinedEventDto.builder()
                 .teamId(team.getId())
                 .teamName(team.getName())
                 .teamJoinCode(team.getJoinCode())
@@ -47,7 +47,7 @@ public class QuizSessionWebSocketBroadcasts {
         log.info("Broadcasting player joined: {} in team: {} for session: {}", 
                 player.getNickname(), team.getName(), sessionJoinCode);
         
-        PlayerJoinedEvent event = PlayerJoinedEvent.builder()
+        PlayerJoinedEventDto event = PlayerJoinedEventDto.builder()
                 .playerId(player.getId())
                 .playerUsername(player.getNickname())
                 .teamId(team.getId())
@@ -76,7 +76,7 @@ public class QuizSessionWebSocketBroadcasts {
         
         messagingTemplate.convertAndSend(
                 "/topic/quiz-session/" + sessionJoinCode + "/admin/events",
-                PlayerJoinedEvent.builder()
+                PlayerJoinedEventDto.builder()
                         .eventType(QuizEventType.QUIZ_ENDED)
                         .build()
         );
@@ -109,7 +109,7 @@ public class QuizSessionWebSocketBroadcasts {
     public void broadcastSessionClosed(String sessionJoinCode) {
         log.info("Broadcasting session closed for session: {}", sessionJoinCode);
         
-        PlayerJoinedEvent event = PlayerJoinedEvent.builder()
+        PlayerJoinedEventDto event = PlayerJoinedEventDto.builder()
                 .eventType(QuizEventType.SESSION_CLOSED)
                 .build();
 

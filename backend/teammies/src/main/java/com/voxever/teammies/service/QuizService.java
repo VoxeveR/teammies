@@ -13,10 +13,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.voxever.teammies.dto.quiz.rest.CreateQuizRequest;
-import com.voxever.teammies.dto.quiz.rest.CreateQuizResponse;
-import com.voxever.teammies.dto.quiz.rest.QuizResponse;
-import com.voxever.teammies.dto.quiz.rest.UpdateQuizRequest;
+import com.voxever.teammies.dto.quiz.rest.CreateQuizRequestDto;
+import com.voxever.teammies.dto.quiz.rest.CreateQuizResponseDto;
+import com.voxever.teammies.dto.quiz.rest.QuizResponseDto;
+import com.voxever.teammies.dto.quiz.rest.UpdateQuizRequestDto;
 import com.voxever.teammies.entity.AnswerOption;
 import com.voxever.teammies.entity.League;
 import com.voxever.teammies.entity.Question;
@@ -38,7 +38,7 @@ public class QuizService {
         this.leagueRepository = leagueRepository;
     }
 
-    public ResponseEntity<CreateQuizResponse> createQuiz(Long leagueId, CreateQuizRequest request, User user) {
+    public ResponseEntity<CreateQuizResponseDto> createQuiz(Long leagueId, CreateQuizRequestDto request, User user) {
         League league = leagueRepository.findById(leagueId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "League not found"));
 
@@ -64,7 +64,7 @@ public class QuizService {
         return ResponseEntity.ok(mapQuizToResponse(savedQuiz));
     }
 
-    private Question mapQuestionDtoToEntity(CreateQuizRequest.QuestionDto qDto) {
+    private Question mapQuestionDtoToEntity(CreateQuizRequestDto.QuestionDto qDto) {
         Question question = Question.builder()
                 .text(qDto.getText())
                 .questionType(qDto.getQuestionType() != null ? qDto.getQuestionType() : "SINGLE_CHOICE")
@@ -83,7 +83,7 @@ public class QuizService {
         return question;
     }
 
-    private AnswerOption mapAnswerOptionDtoToEntity(CreateQuizRequest.QuestionDto.AnswerOptionDto aDto, Question question) {
+    private AnswerOption mapAnswerOptionDtoToEntity(CreateQuizRequestDto.QuestionDto.AnswerOptionDto aDto, Question question) {
         return AnswerOption.builder()
                 .question(question)
                 .text(aDto.getText())
@@ -92,15 +92,15 @@ public class QuizService {
                 .build();
     }
 
-    private CreateQuizResponse mapQuizToResponse(Quiz quiz) {
-        Set<CreateQuizResponse.QuestionResponse> questionResponses = quiz.getQuestions() != null
+    private CreateQuizResponseDto mapQuizToResponse(Quiz quiz) {
+        Set<CreateQuizResponseDto.QuestionResponse> questionResponses = quiz.getQuestions() != null
                 ? quiz.getQuestions().stream()
                 .map(q -> {
-                    Set<CreateQuizResponse.QuestionResponse.AnswerOptionResponse> answerResponses =
+                    Set<CreateQuizResponseDto.QuestionResponse.AnswerOptionResponse> answerResponses =
                             q.getAnswerOptions() != null
                                     ? q.getAnswerOptions().stream()
                                     .sorted(Comparator.comparingInt(AnswerOption::getPosition))
-                                    .map(a -> CreateQuizResponse.QuestionResponse.AnswerOptionResponse.builder()
+                                    .map(a -> CreateQuizResponseDto.QuestionResponse.AnswerOptionResponse.builder()
                                             .id(a.getId())
                                             .text(a.getText())
                                             .correct(a.getCorrect())
@@ -109,7 +109,7 @@ public class QuizService {
                                     .collect(Collectors.toSet())
                                     : new HashSet<>();
 
-                    return CreateQuizResponse.QuestionResponse.builder()
+                    return CreateQuizResponseDto.QuestionResponse.builder()
                             .id(q.getId())
                             .text(q.getText())
                             .questionType(q.getQuestionType())
@@ -121,7 +121,7 @@ public class QuizService {
                 .collect(Collectors.toSet())
                 : new HashSet<>();
 
-        return CreateQuizResponse.builder()
+        return CreateQuizResponseDto.builder()
                 .id(quiz.getId())
                 .title(quiz.getTitle())
                 .description(quiz.getDescription())
@@ -130,17 +130,17 @@ public class QuizService {
                 .build();
     }
 
-    public ResponseEntity<List<QuizResponse>> getQuizzesByLeagueId(Long leagueId) {
+    public ResponseEntity<List<QuizResponseDto>> getQuizzesByLeagueId(Long leagueId) {
         List<Quiz> quizzes = quizRepository.findByLeagueId(leagueId);
 
-        List<QuizResponse> response = quizzes.stream().map(q -> {
-            Set<QuizResponse.QuestionResponse> questions = q.getQuestions() != null
+        List<QuizResponseDto> response = quizzes.stream().map(q -> {
+            Set<QuizResponseDto.QuestionResponse> questions = q.getQuestions() != null
                     ? q.getQuestions().stream().map(ques -> {
-                Set<QuizResponse.QuestionResponse.AnswerOptionResponse> options =
+                Set<QuizResponseDto.QuestionResponse.AnswerOptionResponse> options =
                         ques.getAnswerOptions() != null
                                 ? ques.getAnswerOptions().stream()
                                 .sorted(Comparator.comparingInt(AnswerOption::getPosition))
-                                .map(a -> QuizResponse.QuestionResponse.AnswerOptionResponse.builder()
+                                .map(a -> QuizResponseDto.QuestionResponse.AnswerOptionResponse.builder()
                                         .id(a.getId())
                                         .text(a.getText())
                                         .correct(a.getCorrect())
@@ -149,7 +149,7 @@ public class QuizService {
                                 .collect(Collectors.toSet())
                                 : Set.of();
 
-                return QuizResponse.QuestionResponse.builder()
+                return QuizResponseDto.QuestionResponse.builder()
                         .id(ques.getId())
                         .text(ques.getText())
                         .questionType(ques.getQuestionType())
@@ -160,7 +160,7 @@ public class QuizService {
             }).collect(Collectors.toSet())
                     : Set.of();
 
-            return QuizResponse.builder()
+            return QuizResponseDto.builder()
                     .id(q.getId())
                     .leagueId(q.getLeague().getId())
                     .title(q.getTitle())
@@ -175,11 +175,11 @@ public class QuizService {
     }
 
 
-    public ResponseEntity<QuizResponse> getQuizByIdInLeague(Long leagueId, Long quizId) {
+    public ResponseEntity<QuizResponseDto> getQuizByIdInLeague(Long leagueId, Long quizId) {
         Quiz quiz = quizRepository.findByIdAndLeagueId(quizId, leagueId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Quiz not found in this league"));
 
-        QuizResponse response = QuizResponse.builder()
+        QuizResponseDto response = QuizResponseDto.builder()
                 .id(quiz.getId())
                 .leagueId(quiz.getLeague().getId())
                 .title(quiz.getTitle())
@@ -192,7 +192,7 @@ public class QuizService {
     }
 
     @Transactional
-    public ResponseEntity<QuizResponse> updateQuiz(Long leagueId, Long quizId, UpdateQuizRequest request, User user) {
+    public ResponseEntity<QuizResponseDto> updateQuiz(Long leagueId, Long quizId, UpdateQuizRequestDto request, User user) {
         Quiz quiz = quizRepository.findByIdAndLeagueId(quizId, leagueId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Quiz not found in this league"));
 
@@ -215,7 +215,7 @@ public class QuizService {
         Set<Question> updatedQuestions = new HashSet<>();
 
         if (request.getQuestions() != null) {
-            for (UpdateQuizRequest.QuestionDto qDto : request.getQuestions()) {
+            for (UpdateQuizRequestDto.QuestionDto qDto : request.getQuestions()) {
                 Question question;
 
                 if (qDto.getId() != null && idToQuestion.containsKey(qDto.getId())) {
@@ -283,7 +283,7 @@ public class QuizService {
         Quiz updated = quizRepository.save(quiz);
 
         // Map to response
-        QuizResponse response = QuizResponse.builder()
+        QuizResponseDto response = QuizResponseDto.builder()
                 .id(updated.getId())
                 .leagueId(updated.getLeague().getId())
                 .title(updated.getTitle())
@@ -291,10 +291,10 @@ public class QuizService {
                 .published(updated.isPublished())
                 .createdByUsername(updated.getCreatedBy() != null ? updated.getCreatedBy().getUsername() : "unknown")
                 .questions(updated.getQuestions().stream().map(q -> {
-                    Set<QuizResponse.QuestionResponse.AnswerOptionResponse> answerResponses =
+                    Set<QuizResponseDto.QuestionResponse.AnswerOptionResponse> answerResponses =
                             q.getAnswerOptions() != null
                                     ? q.getAnswerOptions().stream()
-                                    .map(a -> QuizResponse.QuestionResponse.AnswerOptionResponse.builder()
+                                    .map(a -> QuizResponseDto.QuestionResponse.AnswerOptionResponse.builder()
                                             .id(a.getId())
                                             .text(a.getText())
                                             .correct(a.getCorrect())
@@ -303,7 +303,7 @@ public class QuizService {
                                     .collect(Collectors.toSet())
                                     : Set.of();
 
-                    return QuizResponse.QuestionResponse.builder()
+                    return QuizResponseDto.QuestionResponse.builder()
                             .id(q.getId())
                             .text(q.getText())
                             .questionType(q.getQuestionType())

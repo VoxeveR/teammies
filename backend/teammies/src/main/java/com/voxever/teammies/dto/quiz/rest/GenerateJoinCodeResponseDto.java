@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class GenerateJoinCodeResponse {
+public class GenerateJoinCodeResponseDto {
     private Long quizSessionId;
     private Long quizId;
     private String quizTitle;
