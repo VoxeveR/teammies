@@ -11,4 +11,6 @@ public interface LeagueRepository extends JpaRepository<League, Long> {
     Boolean existsByLeagueName(String leagueName);
 
     List<League> findAllByUser(User user);
+
+    List<League> findAllByIsPublicTrue();
 }

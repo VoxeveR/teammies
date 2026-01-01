@@ -26,7 +26,7 @@ public class LeagueController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<List<LeagueResponse>> getMyLeagues(@AuthenticationPrincipal User user) {
+    public ResponseEntity<AllLeaguesResponse> getMyLeagues(@AuthenticationPrincipal User user) {
         return leagueService.getLeaguesOwnedByUser(user);
     }
 
@@ -53,14 +53,14 @@ public class LeagueController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<LeagueResponse> getLeagueById(@PathVariable Long id, @AuthenticationPrincipal User user) {
+    public ResponseEntity<LeagueResponse> getLeagueById(@PathVariable Long id, @AuthenticationPrincipal(errorOnInvalidType = false) User user) {
         return leagueService.getLeagueById(id, user);
     }
 
     @GetMapping("/{id}/ranking")
     public ResponseEntity<List<LeagueStandingResponseDto>> getLeagueRanking(
             @PathVariable Long id,
-            @AuthenticationPrincipal User user) {
+            @AuthenticationPrincipal(errorOnInvalidType = false) User user) {
         return leagueService.getLeagueRanking(id, user);
     }
 

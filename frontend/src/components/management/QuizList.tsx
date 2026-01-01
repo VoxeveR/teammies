@@ -57,6 +57,8 @@ export default function QuizTable({ mockedQuizzes, onQuizClick, onDeleteQuiz, on
             Upcoming: 'bg-yellow-200 text-yellow-800',
       };
 
+      const hasActions = onQuizClick || onDeleteQuiz || onStartQuiz;
+
       return (
             <div className='bg-quiz-white mx-auto w-full overflow-hidden rounded-2xl border border-[#92D1D8] shadow-md'>
                   <table className='w-full text-center text-sm'>
@@ -65,7 +67,7 @@ export default function QuizTable({ mockedQuizzes, onQuizClick, onDeleteQuiz, on
                                     <th className='p-4 font-semibold'>QUIZ</th>
                                     <th className='p-4 font-semibold'>DATE</th>
                                     <th className='p-4 font-semibold'>STATUS</th>
-                                    <th className='p-6'></th>
+                                    {hasActions && <th className='p-6'></th>}
                               </tr>
                         </thead>
                         <tbody>
@@ -76,21 +78,23 @@ export default function QuizTable({ mockedQuizzes, onQuizClick, onDeleteQuiz, on
                                           <td className='p-4'>
                                                 <span className={`rounded-xl px-3 py-1 text-xs font-semibold shadow-sm ${statusStyles[quiz.status]}`}>{quiz.status}</span>
                                           </td>
-                                          <td className='p-4'>
-                                                <Dropdown
-                                                      inline
-                                                      label='...'
-                                                      dismissOnClick={false}
-                                                      className='w-fit bg-none'
-                                                      theme={dropdownTheme}
-                                                      placement='bottom-start'
-                                                      renderTrigger={() => <span>...</span>}
-                                                >
-                                                      <DropdownItem onClick={() => onStartQuiz?.(quiz)}>Start Quiz</DropdownItem>
-                                                      <DropdownItem onClick={() => onQuizClick?.(quiz)}>Edit</DropdownItem>
-                                                      <DropdownItem onClick={() => onDeleteQuiz?.(quiz)}>Delete</DropdownItem>
-                                                </Dropdown>
-                                          </td>
+                                          {hasActions && (
+                                                <td className='p-4'>
+                                                      <Dropdown
+                                                            inline
+                                                            label='...'
+                                                            dismissOnClick={false}
+                                                            className='w-fit bg-none'
+                                                            theme={dropdownTheme}
+                                                            placement='bottom-start'
+                                                            renderTrigger={() => <span>...</span>}
+                                                      >
+                                                            {onStartQuiz && <DropdownItem onClick={() => onStartQuiz?.(quiz)}>Start Quiz</DropdownItem>}
+                                                            {onQuizClick && <DropdownItem onClick={() => onQuizClick?.(quiz)}>Edit</DropdownItem>}
+                                                            {onDeleteQuiz && <DropdownItem onClick={() => onDeleteQuiz?.(quiz)}>Delete</DropdownItem>}
+                                                      </Dropdown>
+                                                </td>
+                                          )}
                                     </tr>
                               ))}
                         </tbody>

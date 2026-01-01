@@ -22,9 +22,17 @@ interface League {
       end_date: string; // ISO date string, e.g., "2025-12-10"
 }
 
+interface AllLeaguesResponse {
+      my_leagues: League[];
+      public_leagues: League[];
+}
+
 function LeagueManagementPage() {
-      const [query, setQuery] = useState('');
-      const [leaguesData, setLeaguesData] = useSessionStorage<League[]>('leaguesData', []);
+      const [myQuery, setMyQuery] = useState('');
+      const [publicQuery, setPublicQuery] = useState('');
+      const [myLeaguesData, setMyLeaguesData] = useState<League[]>([]);
+      const [publicLeaguesData, setPublicLeaguesData] = useState<League[]>([]);
+      const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
       //Form data
       const [leagueName, setLeagueName] = useState('');
@@ -41,18 +49,19 @@ function LeagueManagementPage() {
       const [editLeague, setEditLeague] = useState<League | null>(null);
 
       const fetchLeagues = () => {
-            api.get('/leagues/')
+            const token = sessionStorage.getItem('access_token');
+            setIsAuthenticated(!!token);
+            
+            api.get<AllLeaguesResponse>('/leagues/')
                   .then((res) => {
-                        setLeaguesData(res.data);
-                        sessionStorage.setItem('leaguesData', JSON.stringify(res.data));
+                        setMyLeaguesData(res.data.my_leagues);
+                        setPublicLeaguesData(res.data.public_leagues);
+                        console.log(res.data)
                   })
                   .catch((err) => console.error(err));
       };
 
       useEffect(() => {
-            const stored = sessionStorage.getItem('leaguesData');
-            if (stored) setLeaguesData(JSON.parse(stored));
-
             fetchLeagues();
       }, []);
 
@@ -146,11 +155,17 @@ function LeagueManagementPage() {
             }
       }
 
-      const filtered = useMemo(() => {
-            const q = query.trim().toLowerCase();
-            if (!q) return leaguesData;
-            return leaguesData.filter((l) => l.league_name.toLowerCase().includes(q));
-      }, [leaguesData, query]);
+      const filteredMyLeagues = useMemo(() => {
+            const q = myQuery.trim().toLowerCase();
+            if (!q) return myLeaguesData;
+            return myLeaguesData.filter((l) => l.league_name.toLowerCase().includes(q));
+      }, [myLeaguesData, myQuery]);
+
+      const filteredPublicLeagues = useMemo(() => {
+            const q = publicQuery.trim().toLowerCase();
+            if (!q) return publicLeaguesData;
+            return publicLeaguesData.filter((l) => l.league_name.toLowerCase().includes(q));
+      }, [publicLeaguesData, publicQuery]);
 
       function clearLeague() {
             setEditLeague(null);
@@ -181,13 +196,16 @@ function LeagueManagementPage() {
                   <div className='flex h-fit w-full items-center justify-center lg:h-full'>
                         <div className='bg-quiz-white lg:bg-quiz-white/75 flex h-fit min-h-screen w-full flex-col gap-3 p-4 lg:h-[90%] lg:min-h-fit lg:w-4/5 lg:gap-6 lg:rounded-xl lg:p-10'>
                               <div className='text-center text-4xl lg:text-left lg:text-6xl'>LEAGUE MANAGEMENT</div>
-                              <button className='button lg:hidden' onClick={() => setShowFormMobile((prev) => !prev)}>
-                                    {showForMobile ? 'HIDE FORM' : 'CREATE NEW LEAGUE'}
-                              </button>
+                              {isAuthenticated && (
+                                    <button className='button lg:hidden' onClick={() => setShowFormMobile((prev) => !prev)}>
+                                          {showForMobile ? 'HIDE FORM' : 'CREATE NEW LEAGUE'}
+                                    </button>
+                              )}
 
                               <div className='flex flex-1 flex-col gap-6 lg:flex-row'>
-                                    {/* Lewy panel */}
-                                    <div className={`bg-quiz-white flex flex-col gap-4 rounded-xl p-4 lg:w-3/10 ${showForMobile ? 'flex' : 'hidden'} lg:flex`}>
+                                    {/* Lewy panel - tylko dla zalogowanych */}
+                                    {isAuthenticated && (
+                                          <div className={`bg-quiz-white flex flex-col gap-4 rounded-xl p-4 lg:w-3/10 ${showForMobile ? 'flex' : 'hidden'} lg:flex`}>
                                           <div className='text-quiz-green text-3xl'>{editLeague ? `Update League` : 'Create a new league'} </div>
                                           <div>
                                                 <div className='text-quiz-light-green text-xl'>League name</div>
@@ -253,57 +271,112 @@ function LeagueManagementPage() {
                                                 </button>
                                           </div>
                                     </div>
+                                    )}
 
                                     {/* Prawy panel */}
-                                    <div className='flex flex-1 flex-col lg:p-2'>
-                                          {/* Header z napisem i searchbarem */}
-                                          <div className='flex shrink-0 flex-col items-center justify-between lg:mb-4 lg:flex-row'>
-                                                <h2 className='order-1 pt-4 text-2xl font-bold lg:order-first lg:pt-0'>Your Leagues</h2>
-                                                <div className='relative w-full max-w-sm items-center'>
-                                                      <label htmlFor='league-search' className='sr-only'>
-                                                            Search leagues
-                                                      </label>
-                                                      <FontAwesomeIcon icon={faMagnifyingGlass} className={'text-quiz-white absolute top-1/2 left-3 -translate-y-1/2'} />
-                                                      <input
-                                                            id='league-search'
-                                                            type='text'
-                                                            value={query}
-                                                            onChange={(e) => setQuery(e.target.value)}
-                                                            placeholder='Search leagues...'
-                                                            className='border-box input placeholder:text-quiz-white w-full pl-10!'
-                                                      />
+                                    <div className='flex flex-1 flex-col gap-6 lg:p-2'>
+                                          {/* Sekcja 1: Twoje ligi - tylko dla zalogowanych */}
+                                          {isAuthenticated && (
+                                                <div className='flex flex-1 flex-col'>
+                                                      {/* Header z napisem i searchbarem */}
+                                                      <div className='flex shrink-0 flex-col items-center justify-between lg:mb-4 lg:flex-row'>
+                                                      <h2 className='order-1 pt-4 text-2xl font-bold lg:order-first lg:pt-0'>Your Leagues</h2>
+                                                      <div className='relative w-full max-w-sm items-center'>
+                                                            <label htmlFor='my-league-search' className='sr-only'>
+                                                                  Search your leagues
+                                                            </label>
+                                                            <FontAwesomeIcon icon={faMagnifyingGlass} className={'text-quiz-white absolute top-1/2 left-3 -translate-y-1/2'} />
+                                                            <input
+                                                                  id='my-league-search'
+                                                                  type='text'
+                                                                  value={myQuery}
+                                                                  onChange={(e) => setMyQuery(e.target.value)}
+                                                                  placeholder='Search your leagues...'
+                                                                  className='border-box input placeholder:text-quiz-white w-full pl-10!'
+                                                            />
+                                                      </div>
+                                                </div>
+
+                                                {/* Lista lig z przewijaniem */}
+                                                <div className='relative h-full w-full flex-1'>
+                                                      <div className='lg:scrollbar inset-0 pe-2 lg:absolute lg:overflow-auto'>
+                                                            {filteredMyLeagues.map((league) => (
+                                                                  <div
+                                                                        key={league.league_id}
+                                                                        className='bg-quiz-white border-s-quiz-dark-green mt-2 flex w-full items-center justify-between rounded-lg border border-s-16 p-4 lg:border-none'
+                                                                  >
+                                                                        <NavLink to={`${league.league_id}/quizzes`}>
+                                                                              <div className='text-2xl'>{league.league_name}</div>
+                                                                              <div className='text-quiz-light-green text-sm'>{league.description}</div>
+                                                                        </NavLink>
+
+                                                                        <div className='flex flex-col items-center gap-2 lg:flex-row'>
+                                                                              <button className='button lg:w-30!' onClick={() => startLeagueEditing(league)}>
+                                                                                    EDIT
+                                                                              </button>
+                                                                              <button className='secondaryButton lg:w-30!' onClick={() => handleDeleteLeague(league.league_id)}>
+                                                                                    DELETE
+                                                                              </button>
+                                                                        </div>
+                                                                  </div>
+                                                            ))}
+                                                            {filteredMyLeagues.length === 0 && (
+                                                                  <NoContent
+                                                                        title={myLeaguesData.length === 0 ? 'No leagues yet' : 'No leagues found'}
+                                                                        description={myLeaguesData.length === 0 ? 'It looks like there are no leagues.' : 'Change your search criteria'}
+                                                                  ></NoContent>
+                                                            )}
+                                                      </div>
                                                 </div>
                                           </div>
+                                          )}
 
-                                          {/* Lista lig z przewijaniem */}
-                                          <div className='relative h-full w-full flex-1'>
-                                                <div className='lg:scrollbar inset-0 pe-2 lg:absolute lg:overflow-auto'>
-                                                      {filtered.map((league) => (
-                                                            <div
-                                                                  key={league.league_id}
-                                                                  className='bg-quiz-white border-s-quiz-dark-green mt-2 flex w-full items-center justify-between rounded-lg border border-s-16 p-4 lg:border-none'
-                                                            >
-                                                                  <NavLink to={`${league.league_id}/quizzes`}>
-                                                                        <div className='text-2xl'>{league.league_name}</div>
-                                                                        <div className='text-quiz-light-green text-sm'>{league.description}</div>
-                                                                  </NavLink>
+                                          {/* Sekcja 2: Ligi publiczne */}
+                                          <div className='flex flex-1 flex-col'>
+                                                {/* Header z napisem i searchbarem */}
+                                                <div className='flex shrink-0 flex-col items-center justify-between lg:mb-4 lg:flex-row'>
+                                                      <h2 className='order-1 pt-4 text-2xl font-bold lg:order-first lg:pt-0'>Public Leagues</h2>
+                                                      <div className='relative w-full max-w-sm items-center'>
+                                                            <label htmlFor='public-league-search' className='sr-only'>
+                                                                  Search public leagues
+                                                            </label>
+                                                            <FontAwesomeIcon icon={faMagnifyingGlass} className={'text-quiz-white absolute top-1/2 left-3 -translate-y-1/2'} />
+                                                            <input
+                                                                  id='public-league-search'
+                                                                  type='text'
+                                                                  value={publicQuery}
+                                                                  onChange={(e) => setPublicQuery(e.target.value)}
+                                                                  placeholder='Search public leagues...'
+                                                                  className='border-box input placeholder:text-quiz-white w-full pl-10!'
+                                                            />
+                                                      </div>
+                                                </div>
 
-                                                                  <div className='flex flex-col items-center gap-2 lg:flex-row'>
-                                                                        <button className='button lg:w-30!' onClick={() => startLeagueEditing(league)}>
-                                                                              EDIT
-                                                                        </button>
-                                                                        <button className='secondaryButton lg:w-30!' onClick={() => handleDeleteLeague(league.league_id)}>
-                                                                              DELETE
-                                                                        </button>
+                                                {/* Lista lig z przewijaniem */}
+                                                <div className='relative h-full w-full flex-1'>
+                                                      <div className='lg:scrollbar inset-0 pe-2 lg:absolute lg:overflow-auto'>
+                                                            {filteredPublicLeagues.map((league) => (
+                                                                  <div
+                                                                        key={league.league_id}
+                                                                        className='bg-quiz-white border-s-quiz-dark-green mt-2 flex w-full items-center justify-between rounded-lg border border-s-16 p-4 lg:border-none'
+                                                                  >
+                                                                        <NavLink to={`${league.league_id}/quizzes`}>
+                                                                              <div className='text-2xl'>{league.league_name}</div>
+                                                                              <div className='text-quiz-light-green text-sm'>{league.description}</div>
+                                                                        </NavLink>
+
+                                                                        <div className='flex flex-col items-center gap-2 lg:flex-row'>
+                                                                              <span className='text-quiz-green text-sm font-semibold'>Public</span>
+                                                                        </div>
                                                                   </div>
-                                                            </div>
-                                                      ))}
-                                                      {filtered.length === 0 && (
-                                                            <NoContent
-                                                                  title={leaguesData.length === 0 ? 'No leagues yet' : 'No leagues found'}
-                                                                  description={leaguesData.length === 0 ? 'It looks like there are no leagues.' : 'Change your search criteria'}
-                                                            ></NoContent>
-                                                      )}
+                                                            ))}
+                                                            {filteredPublicLeagues.length === 0 && (
+                                                                  <NoContent
+                                                                        title={publicLeaguesData.length === 0 ? 'No public leagues' : 'No leagues found'}
+                                                                        description={publicLeaguesData.length === 0 ? 'There are no public leagues available.' : 'Change your search criteria'}
+                                                                  ></NoContent>
+                                                            )}
+                                                      </div>
                                                 </div>
                                           </div>
                                     </div>

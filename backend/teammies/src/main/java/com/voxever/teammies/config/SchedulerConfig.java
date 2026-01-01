@@ -13,7 +13,7 @@ public class SchedulerConfig {
     @Bean
     public ThreadPoolTaskScheduler taskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-        scheduler.setPoolSize(10); // dostosuj do liczby równoległych quizów
+        scheduler.setPoolSize(1000);
         scheduler.setThreadNamePrefix("quiz-scheduler-");
         scheduler.initialize();
         return scheduler;

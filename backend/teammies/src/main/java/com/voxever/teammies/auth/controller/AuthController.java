@@ -38,5 +38,4 @@ public class AuthController {
     public ResponseEntity<JwtResponseDto> refreshToken(HttpServletRequest servletRequest, HttpServletResponse response) {
         return authService.refreshToken(servletRequest, response);
     }
-
 }

@@ -75,7 +75,7 @@ function Question({ question, onTimeExpired, onAnswerSelected, teamSelections = 
                   </div>
                   <div className='flex h-6/10 w-full max-w-full flex-col items-center p-4 font-bold text-black'>
                         <p className='max-w-full text-center text-3xl leading-tight wrap-break-word hyphens-auto sm:text-4xl md:text-5xl lg:text-6xl'>{question.question}</p>*{' '}
-                        <img src='./src/assets/tower.png' className='max-h-64 max-w-64 overflow-hidden lg:max-h-fit lg:max-w-fit'></img> *
+                        
                   </div>
                   <div className='grid h-2/5 min-h-0 w-full max-w-full gap-4 overflow-auto lg:grid-cols-2 lg:gap-4'>
                         {question.options.map((option, index) => {

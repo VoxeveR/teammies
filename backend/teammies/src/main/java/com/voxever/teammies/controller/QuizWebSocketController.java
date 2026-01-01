@@ -41,7 +41,6 @@ public class QuizWebSocketController {
     private final QuizTeamRepository quizTeamRepository;
     private final QuizSessionService quizSessionService;
 
-    // Map to track WebSocket session ID -> (playerId, sessionJoinCode)
     private final Map<String, PlayerSessionInfo> playerSessionMap = new HashMap<>();
 
     public QuizWebSocketController(SimpMessagingTemplate messagingTemplate,
@@ -125,16 +124,11 @@ public class QuizWebSocketController {
                 request.getTeamId(),
                 request.getQuestionId());
 
-        QuizSession session = quizSessionRepository.findByJoinCode(sessionJoinCode)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Quiz session not found"));
-
-        // Calculate final team answer and persist to database
         FinalTeamAnswerDto finalAnswer = quizSessionService.calculateAndSaveFinalTeamAnswer(
                 request.getTeamId(),
                 request.getQuestionId()
         );
 
-        // Broadcast final answer to all players in the team
         messagingTemplate.convertAndSend(
                 "/topic/quiz-session/" + sessionJoinCode + "/team/" + teamCode + "/final-answer",
                 finalAnswer

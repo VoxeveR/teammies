@@ -180,29 +180,4 @@ public class AuthService {
         return Arrays.stream(Optional.ofNullable(cookies)
                 .orElse(new Cookie[0])).filter(cookie -> cookie.getName().equals("refreshToken")).findFirst();
     }
-
-    public Optional<User> findByEmail(String email) {
-        return userRepo.findByEmail(email);
-    }
-
-    @Transactional
-    public User registerOAuthUser(String email, String username, String signUpMethod) {
-
-        User newUser = User.builder()
-                .email(email)
-                .username(username)
-                .password(null)
-                .isEnabled(true)
-                .build();
-
-        Role userRole = Role.builder()
-                .role("USER")
-                .user(newUser)
-                .build();
-
-        newUser.setRoles(List.of(userRole));
-        return userRepo.save(newUser);
-    }
-
-
 }

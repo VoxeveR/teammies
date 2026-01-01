@@ -27,42 +27,43 @@ public class SecurityConfig {
 
     private final UserRepository userRepository;
     private final JwtFilter jwtFilter;
-
+    private static final String[] ALLOWED_PATHS = {
+            "/api/auth/**",
+            "/error",
+            "/api/auth/register",
+            "/api/leagues/",
+            "/api/leagues/*",
+            "/api/leagues/*/quizzes",
+            "/api/leagues/*/quizzes/join",
+            "/api/leagues/*/ranking",
+            "/api/quiz-sessions/*/teams",
+            "/api/quiz-sessions/teams/*",
+            "/api/quiz-sessions/*/teams/*/members",
+            "/api/quiz-sessions/*/teams/join",
+            "/api/quiz-sessions/*",
+            "/ws/**",
+            "/ws-quiz"
+    };
 
     public SecurityConfig(UserRepository userRepository, JwtFilter jwtFilter) {
         this.userRepository = userRepository;
         this.jwtFilter = jwtFilter;
     }
-
-    //TODO: RESTORE AUTHENTICATION
+    
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .cors().and()
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/error").permitAll()
-                        .requestMatchers("/api/auth/register").permitAll()
-                        .requestMatchers("/api/leagues/*/quizzes/join").permitAll()
-                        .requestMatchers("/api/quiz-sessions/*/teams").permitAll()
-                        .requestMatchers("/api/quiz-sessions/teams/*").permitAll()
-                        .requestMatchers("/api/quiz-sessions/*/teams/*/members").permitAll()
-                        .requestMatchers("/api/quiz-sessions/*/teams/join").permitAll()
-                        .requestMatchers("/api/quiz-sessions/*").permitAll()
-
-                        .requestMatchers("/ws/**").permitAll()
-                        .requestMatchers("/ws-quiz").permitAll()
-                      //  .requestMatchers("/oauth2/**").permitAll()
+                        .requestMatchers(ALLOWED_PATHS).permitAll()
                         .anyRequest().authenticated())
-//                .oauth2Login(oauth2 -> {
-//                    oauth2.successHandler(oauth2LoginSuccessHandler);
-//                })
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new AuthEntryPointJwt())
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement((session)
+                        -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }
 

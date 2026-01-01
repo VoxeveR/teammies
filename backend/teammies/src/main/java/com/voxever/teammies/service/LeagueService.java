@@ -92,12 +92,23 @@ public class LeagueService {
         return ResponseEntity.ok(toLeagueResponse(league));
     }
 
-    public ResponseEntity<List<LeagueResponse>> getLeaguesOwnedByUser(User user) {
-        List<LeagueResponse> leagues = leagueRepository.findAllByUser(user).stream()
+    public ResponseEntity<AllLeaguesResponse> getLeaguesOwnedByUser(User user) {
+        List<LeagueResponse> myLeagues = user != null 
+                ? leagueRepository.findAllByUser(user).stream()
+                    .map(this::toLeagueResponse)
+                    .toList()
+                : List.of();
+
+        List<LeagueResponse> publicLeagues = leagueRepository.findAllByIsPublicTrue().stream()
                 .map(this::toLeagueResponse)
                 .toList();
 
-        return ResponseEntity.ok().body(leagues);
+        AllLeaguesResponse response = AllLeaguesResponse.builder()
+                .myLeagues(myLeagues)
+                .publicLeagues(publicLeagues)
+                .build();
+
+        return ResponseEntity.ok().body(response);
     }
 
     private LeagueResponse toLeagueResponse(League league) {
@@ -135,7 +146,13 @@ public class LeagueService {
         League league = leagueRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "League not found"));
 
-        if (!league.getUser().getUserId().equals(user.getUserId())) {
+        // Allow access if user is owner OR league is public OR user is not logged in (for public leagues)
+        if (user != null && !league.getUser().getUserId().equals(user.getUserId()) && !league.getIsPublic()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not authorized to view this league");
+        }
+        
+        // If user is null and league is private, deny access
+        if (user == null && !league.getIsPublic()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not authorized to view this league");
         }
 
@@ -146,7 +163,13 @@ public class LeagueService {
         League league = leagueRepository.findById(leagueId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "League not found"));
 
-        if (!league.getUser().getUserId().equals(user.getUserId())) {
+        // Allow access if user is owner OR league is public OR user is not logged in (for public leagues)
+        if (user != null && !league.getUser().getUserId().equals(user.getUserId()) && !league.getIsPublic()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not authorized to view this league's ranking");
+        }
+        
+        // If user is null and league is private, deny access
+        if (user == null && !league.getIsPublic()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not authorized to view this league's ranking");
         }
 

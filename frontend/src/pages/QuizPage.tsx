@@ -38,6 +38,20 @@ function QuizPage() {
                   onConnect: () => {
                         console.log('Connected to WebSocket');
 
+                        stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/team/${params.teamCode}/selection`, (message) => {
+                              try {
+                                    const selection = JSON.parse(message.body);
+                                    console.log('Team member selected:', selection);
+
+                                    setTeamSelections((prev) => {
+                                          const filtered = prev.filter((s) => s.playerId !== selection.playerId);
+                                          return [...filtered, selection];
+                                    });
+                              } catch (error) {
+                                    console.error('Error parsing selection message:', error);
+                              }
+                        });
+
                         stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/events`, (message) => {
                               try {
                                     const event = JSON.parse(message.body);
@@ -49,7 +63,6 @@ function QuizPage() {
                                           setCurrentQuestion(convertedQuestion);
                                           setQuestionNumber(event.position || 1);
                                           setQuestionCount(event.totalQuestions || 1);
-                                          // Clear team selections and final answer for new question
                                           setTeamSelections([]);
                                           setFinalAnswer(null);
                                     } else if (event.eventType === 'SESSION_CLOSED') {
@@ -59,22 +72,6 @@ function QuizPage() {
                                     }
                               } catch (error) {
                                     console.error('Error parsing question message:', error);
-                              }
-                        });
-
-                        // Subscribe to team member selections
-                        stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/team/${params.teamCode}/selection`, (message) => {
-                              try {
-                                    const selection = JSON.parse(message.body);
-                                    console.log('Team member selected:', selection);
-
-                                    // Add or update team selection
-                                    setTeamSelections((prev) => {
-                                          const filtered = prev.filter((s) => s.playerId !== selection.playerId);
-                                          return [...filtered, selection];
-                                    });
-                              } catch (error) {
-                                    console.error('Error parsing selection message:', error);
                               }
                         });
 

@@ -19,6 +19,13 @@ interface BackendQuiz {
       questions?: any[];
 }
 
+interface League {
+      league_id: number;
+      league_name: string;
+      owner_id: number;
+      is_public: boolean;
+}
+
 interface LeagueStanding {
       teamName: string;
       points: number;
@@ -31,6 +38,7 @@ function QuizManagementPage() {
       const { leagueId } = useParams();
 
       const [leagueName, setLeagueName] = useState<string>('');
+      const [isOwner, setIsOwner] = useState<boolean>(false);
       const [standings, setStandings] = useState<LeagueStanding[]>([]);
       const navigate = useNavigate();
       const [quizzes, setQuizzes] = useState<BackendQuiz[]>([]);
@@ -43,8 +51,13 @@ function QuizManagementPage() {
             async function fetchLeagueAndQuizzes() {
                   setLoading(true);
                   try {
-                        const leagueResp = await api.get(`/leagues/${leagueId}`);
+                        const leagueResp = await api.get<League>(`/leagues/${leagueId}`);
                         setLeagueName(leagueResp.data.league_name);
+
+                        // Get current user ID from session storage (stored during login)
+                        const currentUserId = getUserIdFromToken();
+                        const leagueOwnerId = leagueResp.data.owner_id;
+                        setIsOwner(currentUserId === leagueOwnerId);
 
                         const quizzesResp = await api.get<BackendQuiz[]>(`/leagues/${leagueId}/quizzes`);
                         setQuizzes(quizzesResp.data);
@@ -70,6 +83,21 @@ function QuizManagementPage() {
 
             fetchLeagueAndQuizzes();
       }, [leagueId]);
+
+      // Helper to extract user ID from JWT token in session storage
+      const getUserIdFromToken = (): number | null => {
+            const token = sessionStorage.getItem('access_token');
+            if (!token) return null;
+            
+            try {
+                  const payload = JSON.parse(atob(token.split('.')[1]));
+                  // JWT stores userId in 'sub' (subject) field
+                  return payload.sub ? parseInt(payload.sub, 10) : null;
+            } catch (e) {
+                  console.error('Failed to parse token:', e);
+                  return null;
+            }
+      };
 
       const handleStart = async (quizId: number) => {
             if (!leagueId) return;
@@ -159,7 +187,7 @@ function QuizManagementPage() {
                                     <div className='flex flex-1 flex-col lg:p-2'>
                                           <div className='flex shrink-0 flex-col items-center justify-between lg:mb-4 lg:flex-row'>
                                                 <h2 className='pt-4 text-2xl font-bold lg:pt-0'>League Quizzes</h2>
-                                                <ModalWithForm onSubmitData={handleAddOrUpdateQuiz} />
+                                                {isOwner && <ModalWithForm onSubmitData={handleAddOrUpdateQuiz} />}
                                           </div>
 
                                           <div className='relative h-full w-full flex-1'>
@@ -174,16 +202,16 @@ function QuizManagementPage() {
                                                                         date: '—',
                                                                         status: q.published ? 'Live' : 'Upcoming',
                                                                   }))}
-                                                                  onQuizClick={(quiz: Quiz & { id: number }) => {
+                                                                  onQuizClick={isOwner ? (quiz: Quiz & { id: number }) => {
                                                                         const backendQuiz = quizzes.find((q) => q.id === quiz.id);
                                                                         if (backendQuiz) setEditingQuiz(backendQuiz);
-                                                                  }}
-                                                                  onStartQuiz={(quiz: Quiz & { id: number }) => handleStart(quiz.id)}
-                                                                  onDeleteQuiz={(quiz: Quiz & { id: number }) => handleDeleteQuiz(quiz)}
+                                                                  } : undefined}
+                                                                  onStartQuiz={isOwner ? (quiz: Quiz & { id: number }) => handleStart(quiz.id) : undefined}
+                                                                  onDeleteQuiz={isOwner ? (quiz: Quiz & { id: number }) => handleDeleteQuiz(quiz) : undefined}
                                                             />
                                                       ) : (
                                                             <NoContent title='No quizzes yet' description='It looks like there are no quizzes in this league'>
-                                                                  <ModalWithForm onSubmitData={handleAddOrUpdateQuiz} />
+                                                                  {isOwner && <ModalWithForm onSubmitData={handleAddOrUpdateQuiz} />}
                                                             </NoContent>
                                                       )}
                                                 </div>

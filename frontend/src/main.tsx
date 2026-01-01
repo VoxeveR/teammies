@@ -27,22 +27,20 @@ const router = createBrowserRouter([
             children: [
                   {
                         element: <AuthenticatedRoute />,
-                        children: [
-                              {
-                                    path: 'leagues',
-                                    element: (
-                                          <>
-                                                <LeagueManagementPage></LeagueManagementPage>
-                                          </>
-                                    ),
-                              },
-                              {
-                                    path: 'leagues/:leagueId/quizzes',
-                                    element: <QuizManagementPage />,
-                              },
-                        ],
+                        children: [],
                   },
-
+                  {
+                        path: 'leagues',
+                        element: (
+                              <>
+                                    <LeagueManagementPage></LeagueManagementPage>
+                              </>
+                        ),
+                  },
+                  {
+                        path: 'leagues/:leagueId/quizzes',
+                        element: <QuizManagementPage />,
+                  },
                   {
                         path: '/',
                         element: <App />,
