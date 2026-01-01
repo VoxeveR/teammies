@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FinalAnswerCalculationRequest {
+public class FinalAnswerCalculationRequestDto {
     private Long teamId;
     private Long questionId;
 }

@@ -11,7 +11,7 @@ import jakarta.validation.constraints.Size;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JoinQuizRequest {
+public class JoinQuizRequestDto {
     @NotBlank(message = "Join code is required")
     private String joinCode;
 

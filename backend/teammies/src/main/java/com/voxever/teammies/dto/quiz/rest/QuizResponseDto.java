@@ -7,7 +7,7 @@ import java.util.Set;
 
 @Data
 @Builder
-public class QuizResponse {
+public class QuizResponseDto {
     private Long id;
     private Long leagueId;
     private String title;

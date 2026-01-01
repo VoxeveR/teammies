@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.voxever.teammies.dto.quiz.rest.JoinQuizRequest;
-import com.voxever.teammies.dto.quiz.rest.JoinQuizResponse;
-import com.voxever.teammies.dto.quiz.rest.StartQuizResponse;
+import com.voxever.teammies.dto.quiz.rest.JoinQuizRequestDto;
+import com.voxever.teammies.dto.quiz.rest.JoinQuizResponseDto;
+import com.voxever.teammies.dto.quiz.rest.StartQuizResponseDto;
 import com.voxever.teammies.dto.quiz.rest.TeamWithPlayersDto;
 import com.voxever.teammies.dto.team.CreateTeamRequest;
 import com.voxever.teammies.dto.team.CreateTeamResponse;
@@ -41,7 +41,7 @@ public class QuizSessionController {
     }
 
     @PostMapping("/{sessionJoinCode}/start")
-    public ResponseEntity<StartQuizResponse> startQuiz(
+    public ResponseEntity<StartQuizResponseDto> startQuiz(
             @PathVariable String sessionJoinCode,
             @AuthenticationPrincipal User user) {
         return quizSessionService.startQuiz(sessionJoinCode, user);
@@ -62,7 +62,7 @@ public class QuizSessionController {
     }
 
     @PostMapping("/join")
-    public ResponseEntity<JoinQuizResponse> joinQuiz(@RequestBody @Valid JoinQuizRequest request) {
+    public ResponseEntity<JoinQuizResponseDto> joinQuiz(@RequestBody @Valid JoinQuizRequestDto request) {
         return quizSessionService.joinQuiz(request);
     }
 

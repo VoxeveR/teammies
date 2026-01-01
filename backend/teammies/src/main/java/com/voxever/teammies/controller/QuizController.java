@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.voxever.teammies.dto.quiz.rest.CreateQuizRequest;
-import com.voxever.teammies.dto.quiz.rest.CreateQuizResponse;
-import com.voxever.teammies.dto.quiz.rest.GenerateJoinCodeResponse;
-import com.voxever.teammies.dto.quiz.rest.QuizResponse;
-import com.voxever.teammies.dto.quiz.rest.UpdateQuizRequest;
+import com.voxever.teammies.dto.quiz.rest.CreateQuizRequestDto;
+import com.voxever.teammies.dto.quiz.rest.CreateQuizResponseDto;
+import com.voxever.teammies.dto.quiz.rest.GenerateJoinCodeResponseDto;
+import com.voxever.teammies.dto.quiz.rest.QuizResponseDto;
+import com.voxever.teammies.dto.quiz.rest.UpdateQuizRequestDto;
 import com.voxever.teammies.entity.User;
 import com.voxever.teammies.service.QuizService;
 import com.voxever.teammies.service.QuizSessionService;
@@ -39,30 +39,30 @@ public class QuizController {
     }
 
     @PostMapping
-    public ResponseEntity<CreateQuizResponse> createQuiz(
+    public ResponseEntity<CreateQuizResponseDto> createQuiz(
             @PathVariable Long leagueId,
-            @RequestBody @Valid CreateQuizRequest request,
+            @RequestBody @Valid CreateQuizRequestDto request,
             @AuthenticationPrincipal User user) {
         return quizService.createQuiz(leagueId, request, user);
     }
 
     @GetMapping
-    public ResponseEntity<List<QuizResponse>> getAllQuizzesInLeague(@PathVariable Long leagueId) {
+    public ResponseEntity<List<QuizResponseDto>> getAllQuizzesInLeague(@PathVariable Long leagueId) {
         return quizService.getQuizzesByLeagueId(leagueId);
     }
 
     @GetMapping("/{quizId}")
-    public ResponseEntity<QuizResponse> getQuizById(
+    public ResponseEntity<QuizResponseDto> getQuizById(
             @PathVariable Long leagueId,
             @PathVariable Long quizId) {
         return quizService.getQuizByIdInLeague(leagueId, quizId);
     }
 
     @PutMapping("/{quizId}")
-    public ResponseEntity<QuizResponse> updateQuiz(
+    public ResponseEntity<QuizResponseDto> updateQuiz(
             @PathVariable Long leagueId,
             @PathVariable Long quizId,
-            @RequestBody @Valid UpdateQuizRequest request,
+            @RequestBody @Valid UpdateQuizRequestDto request,
             @AuthenticationPrincipal User user) {
         return quizService.updateQuiz(leagueId, quizId, request, user);
     }
@@ -76,7 +76,7 @@ public class QuizController {
     }
 
     @PostMapping("/{quizId}/generate-join-code")
-    public ResponseEntity<GenerateJoinCodeResponse> generateJoinCode(
+    public ResponseEntity<GenerateJoinCodeResponseDto> generateJoinCode(
             @PathVariable Long leagueId,
             @PathVariable Long quizId) {
         return quizSessionService.generateJoinCode(leagueId, quizId);

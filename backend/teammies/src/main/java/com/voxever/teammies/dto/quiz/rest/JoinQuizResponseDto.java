@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JoinQuizResponse {
+public class JoinQuizResponseDto {
     private Long quizSessionId;
     private String sessionJoinCode;
     private Long quizId;
