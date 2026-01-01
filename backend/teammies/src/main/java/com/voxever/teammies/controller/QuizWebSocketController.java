@@ -1,18 +1,15 @@
 package com.voxever.teammies.controller;
 
-import org.springframework.context.event.EventListener;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpAttributesContextHolder;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
-import com.voxever.teammies.dto.quiz.websocket.FinalAnswerCalculationRequest;
+import com.voxever.teammies.dto.quiz.websocket.FinalAnswerCalculationRequestDto;
 import com.voxever.teammies.dto.quiz.websocket.FinalTeamAnswerDto;
 import com.voxever.teammies.dto.quiz.websocket.HighlightSelectionDto;
 import com.voxever.teammies.dto.quiz.websocket.PlayerSelectionDto;
@@ -118,7 +115,7 @@ public class QuizWebSocketController {
     public void calculateAndBroadcastFinalAnswer(
             @DestinationVariable String sessionJoinCode,
             @DestinationVariable String teamCode,
-            @Payload FinalAnswerCalculationRequest request) {
+            @Payload FinalAnswerCalculationRequestDto request) {
 
         log.info("Calculating final answer for team: {}, question: {}",
                 request.getTeamId(),

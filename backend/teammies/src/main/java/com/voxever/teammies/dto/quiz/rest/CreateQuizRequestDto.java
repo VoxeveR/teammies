@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CreateQuizRequest {
+public class CreateQuizRequestDto {
     @NotBlank
     @Size(max = 255)
     private String title;

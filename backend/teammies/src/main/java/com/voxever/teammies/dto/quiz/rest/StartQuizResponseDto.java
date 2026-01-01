@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class StartQuizResponse {
+public class StartQuizResponseDto {
     private Long quizSessionId;
     private Long quizId;
     private String quizTitle;

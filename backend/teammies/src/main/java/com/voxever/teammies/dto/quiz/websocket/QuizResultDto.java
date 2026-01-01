@@ -1,4 +1,4 @@
-package com.voxever.teammies.dto.quiz;
+package com.voxever.teammies.dto.quiz.websocket;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

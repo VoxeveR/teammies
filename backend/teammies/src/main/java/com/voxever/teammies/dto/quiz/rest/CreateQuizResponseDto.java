@@ -11,7 +11,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CreateQuizResponse {
+public class CreateQuizResponseDto {
     private Long id;
     private String title;
     private String description;
