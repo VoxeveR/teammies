@@ -75,6 +75,8 @@ function QuizJoinPage() {
                         console.log(error);
                         if (error.response?.status === 404) {
                               toast.error('Invalid Lobby Code!');
+                        } else if (error.response?.status === 409) {
+                              toast.error('This nickname is already taken!');
                         } else if (error.response?.status === 429) {
                               toast.error('Too many join requests. Please try again later.');
                         } else {

@@ -29,6 +29,29 @@ function QuizPage() {
       const playerId = params.playerId || quizData.quizPlayerId;
 
       const stompClientRef = useRef<StompJs.Client | null>(null);
+      const isConnectedRef = useRef<boolean>(false);
+
+      // Send disconnect message when page is about to unload
+      useEffect(() => {
+            const handleBeforeUnload = () => {
+                  if (stompClientRef.current?.active && isConnectedRef.current && params.sessionCode && params.teamCode && playerId) {
+                        console.log('Page unloading, sending disconnect message:', {
+                              sessionCode: params.sessionCode,
+                              teamCode: params.teamCode,
+                              playerId: playerId,
+                        });
+                        stompClientRef.current.publish({
+                              destination: `/app/quiz-session/${params.sessionCode}/team/${params.teamCode}/player-disconnect`,
+                              body: JSON.stringify({
+                                    playerId: playerId,
+                              }),
+                        });
+                  }
+            };
+
+            window.addEventListener('beforeunload', handleBeforeUnload);
+            return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+      }, [params.sessionCode, params.teamCode, playerId]);
 
       useEffect(() => {
             if (!params.sessionCode || !params.teamCode) return;
@@ -37,6 +60,7 @@ function QuizPage() {
                   brokerURL: 'ws://localhost:8080/ws-quiz',
                   onConnect: () => {
                         console.log('Connected to WebSocket');
+                        isConnectedRef.current = true;
 
                         stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/team/${params.teamCode}/selection`, (message) => {
                               try {
@@ -117,7 +141,9 @@ function QuizPage() {
             stompClient.activate();
 
             return () => {
+                  // Only deactivate WebSocket - disconnect is handled by beforeunload
                   if (stompClientRef.current?.active) {
+                        isConnectedRef.current = false;
                         stompClientRef.current.deactivate();
                   }
             };

@@ -15,6 +15,7 @@ public interface QuizTeamRepository extends JpaRepository<QuizTeam, Long> {
     List<QuizTeam> findByQuizSessionId(Long quizSessionId);
     List<QuizTeam> findAllByJoinCode(String joinCode);
     Optional<QuizTeam> findByJoinCodeAndQuizSession(String joinCode, QuizSession quizSession);
+    Optional<QuizTeam> findByNameAndQuizSessionId(String name, Long sessionId);
     
     @Query("SELECT DISTINCT t FROM QuizTeam t LEFT JOIN FETCH t.players WHERE t.id = :id")
     Optional<QuizTeam> findByIdWithPlayers(@Param("id") Long id);

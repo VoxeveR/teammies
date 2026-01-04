@@ -16,8 +16,32 @@ function WaitingPage() {
       const [error, setError] = useState<string | null>(null);
       const lastCountRef = useRef<number>(-1);
       const updateTeamMembersRef = useRef(updateTeamMembers);
+      const playerId = quizData.quizPlayerId;
 
       const stompClientRef = useRef<StompJs.Client | null>(null);
+      const isConnectedRef = useRef<boolean>(false);
+
+      // Send disconnect message when page is about to unload
+      useEffect(() => {
+            const handleBeforeUnload = () => {
+                  if (stompClientRef.current?.active && isConnectedRef.current && params.sessionCode && params.teamCode && quizData.quizPlayerId) {
+                        console.log('Page unloading, sending disconnect message:', {
+                              sessionCode: params.sessionCode,
+                              teamCode: params.teamCode,
+                              playerId: quizData.quizPlayerId,
+                        });
+                        stompClientRef.current.publish({
+                              destination: `/app/quiz-session/${params.sessionCode}/team/${params.teamCode}/player-disconnect`,
+                              body: JSON.stringify({
+                                    playerId: quizData.quizPlayerId,
+                              }),
+                        });
+                  }
+            };
+
+            window.addEventListener('beforeunload', handleBeforeUnload);
+            return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+      }, [params.sessionCode, params.teamCode, quizData.quizPlayerId]);
 
       useEffect(() => {
             if (!params.sessionCode || !params.teamCode) return;
@@ -26,6 +50,7 @@ function WaitingPage() {
                   brokerURL: 'ws://localhost:8080/ws-quiz',
                   onConnect: () => {
                         console.log('Connected to WebSocket');
+                        isConnectedRef.current = true;
 
                         // Subscribe to team member updates
                         stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/team/${params.teamCode}`, (message) => {
@@ -57,9 +82,47 @@ function WaitingPage() {
                                     console.error('Error parsing question message:', error);
                               }
                         });
+
+                        // Subscribe to team events (player left, etc.)
+                        stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/team/${params.teamCode}/events`, (message) => {
+                              try {
+                                    const event = JSON.parse(message.body);
+                                    console.log('Team event received:', event);
+
+                                    if (event.eventType === 'PLAYER_LEFT') {
+                                          console.log('Player left event received');
+                                          
+                                          if (event.teamDeleted) {
+                                                toast.error('Team has been deleted!');
+                                                navigate('/join');
+                                          } else {
+                                                // Remove the player from local team members
+                                                setLocalTeamMembers((prev) =>
+                                                      prev
+                                                            .filter((member) => member.playerId !== event.playerId)
+                                                            .map((member) =>
+                                                                  member.playerId === event.newCaptainId
+                                                                        ? { ...member, captain: true }
+                                                                        : { ...member, captain: false }
+                                                            )
+                                                );
+                                                
+                                                toast.info(`${event.playerUsername} left the team`);
+                                                
+                                                // If there's a new captain, show that info
+                                                if (event.newCaptainUsername) {
+                                                      toast.success(`${event.newCaptainUsername} is now the team captain`);
+                                                }
+                                          }
+                                    }
+                              } catch (error) {
+                                    console.error('Error parsing team event message:', error);
+                              }
+                        });
                   },
                   onDisconnect: () => {
                         console.log('Disconnected from WebSocket');
+                        console.log('isConnectedRef.current:', isConnectedRef.current);
                   },
                   onStompError: (frame) => {
                         console.error('STOMP Error:', frame.body);
@@ -70,11 +133,13 @@ function WaitingPage() {
             stompClient.activate();
 
             return () => {
+                  // Only deactivate WebSocket - disconnect is handled by beforeunload
                   if (stompClientRef.current?.active) {
+                        isConnectedRef.current = false;
                         stompClientRef.current.deactivate();
                   }
             };
-      }, [params.sessionCode, params.teamCode, navigate]);
+      }, [params.sessionCode, params.teamCode, quizData.quizPlayerId, navigate]);
 
       function copyToClipboard(text: string) {
             navigator.clipboard.writeText(text);

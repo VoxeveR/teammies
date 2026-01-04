@@ -55,6 +55,10 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                                     new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
                             SecurityContextHolder.getContext().setAuthentication(authToken);
                             accessor.setUser(authToken);
+                            
+                            // Store user in session attributes so it persists across messages
+                            accessor.getSessionAttributes().put("AUTHENTICATED_USER", user);
+                            
                             log.info("WebSocket user authenticated: {}", userId);
                         }
                     } else {

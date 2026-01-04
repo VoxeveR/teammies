@@ -83,6 +83,38 @@ function AdminWaitingPage() {
                                                             : team
                                                 )
                                           );
+                                    } else if (event.eventType === 'PLAYER_LEFT') {
+                                          console.log('Player left event');
+                                          
+                                          if (event.teamDeleted) {
+                                                // Remove the team from the list
+                                                setSessionTeams((prevTeams) =>
+                                                      prevTeams.filter((team) => team.teamId !== event.teamId)
+                                                );
+                                                toast.info(`Team "${event.teamName}" has been deleted (last member left)`);
+                                          } else {
+                                                // Update the team to remove the player and update captain if needed
+                                                setSessionTeams((prevTeams) =>
+                                                      prevTeams.map((team) =>
+                                                            team.teamId === event.teamId
+                                                                  ? {
+                                                                          ...team,
+                                                                          players: team.players
+                                                                                .filter((p) => p.playerId !== event.playerId)
+                                                                                .map((p) =>
+                                                                                      p.playerId === event.newCaptainId
+                                                                                            ? { ...p, captain: true }
+                                                                                            : { ...p, captain: false }
+                                                                                ),
+                                                                    }
+                                                                  : team
+                                                      )
+                                                );
+                                                toast.info(`${event.playerUsername} left team "${event.teamName}"`);
+                                                if (event.newCaptainUsername) {
+                                                      toast.success(`${event.newCaptainUsername} is now the captain of "${event.teamName}"`);
+                                                }
+                                          }
                                     } else if (event.eventType === 'SESSION_CLOSED') {
                                           console.log('Session closed event');
                                           toast.success('Quiz session has been closed!');
@@ -145,6 +177,8 @@ function AdminWaitingPage() {
                   const response = await api.post(`/quiz-sessions/${params.sessionCode}/start`);
                   console.log('Quiz started:', response.data);
                   setIsQuizRunning(true);
+                  // Refresh teams to ensure we have latest data before showing quiz in progress
+                  await loadInitialTeams();
                   toast.success('Quiz started!');
             } catch (error) {
                   console.error('Failed to start quiz:', error);

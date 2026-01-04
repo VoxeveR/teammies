@@ -91,7 +91,11 @@ function TeamPage() {
                   })
                   .catch((error) => {
                         console.log(error);
-                        toast.error("Can't create team!. Try again later.");
+                        if (error.response?.status === 409) {
+                              toast.error('This team name is already taken!');
+                        } else {
+                              toast.error("Can't create team!. Try again later.");
+                        }
                   });
       }
 
