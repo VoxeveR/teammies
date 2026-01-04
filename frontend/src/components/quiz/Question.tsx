@@ -75,7 +75,6 @@ function Question({ question, onTimeExpired, onAnswerSelected, teamSelections = 
                   </div>
                   <div className='flex h-6/10 w-full max-w-full flex-col items-center p-4 font-bold text-black'>
                         <p className='max-w-full text-center text-3xl leading-tight wrap-break-word hyphens-auto sm:text-4xl md:text-5xl lg:text-6xl'>{question.question}</p>*{' '}
-                        
                   </div>
                   <div className='grid h-2/5 min-h-0 w-full max-w-full gap-4 overflow-auto lg:grid-cols-2 lg:gap-4'>
                         {question.options.map((option, index) => {
@@ -91,6 +90,7 @@ function Question({ question, onTimeExpired, onAnswerSelected, teamSelections = 
                               const isCorrectAnswerOption = finalAnswer && finalAnswer.correctAnswerIndex === index;
                               const isFinalAnswerCorrect = finalAnswer && finalAnswer.isCorrect;
                               const hasCorrectAnswer = finalAnswer && finalAnswer.correctAnswerIndex !== null && finalAnswer.correctAnswerIndex !== undefined;
+                              const isEmptyAnswer = finalAnswer && finalAnswer.finalAnswerIndex === '';
 
                               let buttonColor = 'bg-quiz-dark-green border-gray-600 text-white hover:scale-100 hover:bg-[#0a4a4d]';
 
@@ -105,8 +105,8 @@ function Question({ question, onTimeExpired, onAnswerSelected, teamSelections = 
                                           // No correct answer provided - highlight red
                                           buttonColor = 'scale-100 border-white bg-red-600 text-white shadow-lg';
                                     }
-                              } else if (isCorrectAnswerOption && finalAnswer && !finalAnswer.isCorrect) {
-                                    // Show correct answer when answer was wrong
+                              } else if (isCorrectAnswerOption && finalAnswer && (isEmptyAnswer || !finalAnswer.isCorrect)) {
+                                    // Show correct answer when answer was wrong or empty
                                     buttonColor = 'scale-100 border-white bg-green-500 text-white shadow-lg';
                               } else if (selectedIndex === index) {
                                     buttonColor = 'scale-100 border-white bg-[#1CABB0] text-white shadow-lg';

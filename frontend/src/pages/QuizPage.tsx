@@ -81,6 +81,12 @@ function QuizPage() {
                                     const finalAnswerData = JSON.parse(message.body);
                                     console.log('Final answer received:', finalAnswerData);
                                     console.log('Final answer index:', finalAnswerData.finalAnswerIndex, 'Correct answer index:', finalAnswerData.correctAnswerIndex);
+
+                                    // Show toast if no answer was provided
+                                    if (finalAnswerData.finalAnswerIndex === '') {
+                                          toast.error('No answer was provided');
+                                    }
+
                                     setFinalAnswer(finalAnswerData);
                               } catch (error) {
                                     console.error('Error parsing final answer message:', error);

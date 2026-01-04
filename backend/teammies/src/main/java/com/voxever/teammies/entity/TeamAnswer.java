@@ -43,10 +43,10 @@ public class TeamAnswer {
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String finalAnswer;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Integer finalAnswerIndex;
 
     @Enumerated(EnumType.STRING)

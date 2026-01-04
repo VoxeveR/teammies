@@ -9,7 +9,6 @@ import { NavLink } from 'react-router-dom';
 import DatepickerWrapper from '../components/management/DatepickerWrapper';
 import useSessionStorage from '../hooks/useSessionStorage';
 
-
 interface League {
       league_id: number;
       league_name: string;
@@ -49,14 +48,14 @@ function LeagueManagementPage() {
       const [editLeague, setEditLeague] = useState<League | null>(null);
 
       const fetchLeagues = () => {
-            const token = sessionStorage.getItem('access_token');
+            const token = localStorage.getItem('access_token');
             setIsAuthenticated(!!token);
-            
+
             api.get<AllLeaguesResponse>('/leagues/')
                   .then((res) => {
                         setMyLeaguesData(res.data.my_leagues);
                         setPublicLeaguesData(res.data.public_leagues);
-                        console.log(res.data)
+                        console.log(res.data);
                   })
                   .catch((err) => console.error(err));
       };
@@ -206,71 +205,77 @@ function LeagueManagementPage() {
                                     {/* Lewy panel - tylko dla zalogowanych */}
                                     {isAuthenticated && (
                                           <div className={`bg-quiz-white flex flex-col gap-4 rounded-xl p-4 lg:w-3/10 ${showForMobile ? 'flex' : 'hidden'} lg:flex`}>
-                                          <div className='text-quiz-green text-3xl'>{editLeague ? `Update League` : 'Create a new league'} </div>
-                                          <div>
-                                                <div className='text-quiz-light-green text-xl'>League name</div>
-                                                <input className='input' placeholder='League name' value={leagueName} onChange={(e) => setLeagueName(e.target.value)}></input>
-                                          </div>
+                                                <div className='text-quiz-green text-3xl'>{editLeague ? `Update League` : 'Create a new league'} </div>
+                                                <div>
+                                                      <div className='text-quiz-light-green text-xl'>League name</div>
+                                                      <input className='input' placeholder='League name' value={leagueName} onChange={(e) => setLeagueName(e.target.value)}></input>
+                                                </div>
 
-                                          <div className='flex flex-1 flex-col'>
-                                                <div className='text-quiz-light-green text-xl'>League description</div>
-                                                <textarea
-                                                      className='input h-full resize-none align-text-top'
-                                                      placeholder='Provide a brief description of your league'
-                                                      value={description}
-                                                      onChange={(e) => setDescription(e.target.value)}
-                                                ></textarea>
-                                          </div>
-                                          <div className='flex w-full flex-row gap-2'>
-                                                <div className='w-full'>
-                                                      <div className='text-quiz-light-green text-xl'>Start date</div>
-                                                      <DatepickerWrapper
-                                                            key={startDate?.toISOString() ?? 'start'}
-                                                            value={startDate}
-                                                            onChange={(date) => setStartDate(date)}
-                                                            placeholder='Select start date'
-                                                      />
+                                                <div className='flex flex-1 flex-col'>
+                                                      <div className='text-quiz-light-green text-xl'>League description</div>
+                                                      <textarea
+                                                            className='input h-full resize-none align-text-top'
+                                                            placeholder='Provide a brief description of your league'
+                                                            value={description}
+                                                            onChange={(e) => setDescription(e.target.value)}
+                                                      ></textarea>
                                                 </div>
-                                                <div className='w-full'>
-                                                      <div className='text-quiz-light-green text-xl'>End date</div>
-                                                      <DatepickerWrapper
-                                                            key={startDate?.toISOString() ?? 'start'}
-                                                            value={endDate}
-                                                            onChange={(date) => setEndDate(date)}
-                                                            placeholder='Select end date'
-                                                      />
+                                                <div className='flex w-full flex-row gap-2'>
+                                                      <div className='w-full'>
+                                                            <div className='text-quiz-light-green text-xl'>Start date</div>
+                                                            <DatepickerWrapper
+                                                                  key={startDate?.toISOString() ?? 'start'}
+                                                                  value={startDate}
+                                                                  onChange={(date) => setStartDate(date)}
+                                                                  placeholder='Select start date'
+                                                            />
+                                                      </div>
+                                                      <div className='w-full'>
+                                                            <div className='text-quiz-light-green text-xl'>End date</div>
+                                                            <DatepickerWrapper
+                                                                  key={startDate?.toISOString() ?? 'start'}
+                                                                  value={endDate}
+                                                                  onChange={(date) => setEndDate(date)}
+                                                                  placeholder='Select end date'
+                                                            />
+                                                      </div>
                                                 </div>
-                                          </div>
-                                          <div className='flex w-full flex-row gap-2'>
-                                                <div className='w-full'>
-                                                      <div className='text-quiz-light-green text-xl'>Team size</div>
-                                                      <input className='input w-full!' placeholder='Team size' type='number' value={teamSize} onChange={(e) => setTeamSize(e.target.value)}></input>
+                                                <div className='flex w-full flex-row gap-2'>
+                                                      <div className='w-full'>
+                                                            <div className='text-quiz-light-green text-xl'>Team size</div>
+                                                            <input
+                                                                  className='input w-full!'
+                                                                  placeholder='Team size'
+                                                                  type='number'
+                                                                  value={teamSize}
+                                                                  onChange={(e) => setTeamSize(e.target.value)}
+                                                            ></input>
+                                                      </div>
+                                                      <div className='w-full'>
+                                                            <div className='text-quiz-light-green text-xl'>Max teams</div>
+                                                            <input className='input' placeholder='Max teams' type='number' value={maxTeams} onChange={(e) => setMaxTeams(e.target.value)}></input>
+                                                      </div>
                                                 </div>
-                                                <div className='w-full'>
-                                                      <div className='text-quiz-light-green text-xl'>Max teams</div>
-                                                      <input className='input' placeholder='Max teams' type='number' value={maxTeams} onChange={(e) => setMaxTeams(e.target.value)}></input>
+                                                <div>
+                                                      <div className='text-quiz-light-green text-xl'>Privacy</div>
+                                                      <select className='input' value={isPublic} onChange={(e) => setIsPublic(e.target.value)}>
+                                                            <option value='private'>Private</option>
+                                                            <option value='public'>Public</option>
+                                                      </select>
                                                 </div>
-                                          </div>
-                                          <div>
-                                                <div className='text-quiz-light-green text-xl'>Privacy</div>
-                                                <select className='input' value={isPublic} onChange={(e) => setIsPublic(e.target.value)}>
-                                                      <option value='private'>Private</option>
-                                                      <option value='public'>Public</option>
-                                                </select>
-                                          </div>
 
-                                          <div className='flex w-full items-center justify-center gap-4'>
-                                                {editLeague && (
-                                                      <button className='secondaryButton w-[44%]!' onClick={() => clearLeague()}>
-                                                            Cancel
+                                                <div className='flex w-full items-center justify-center gap-4'>
+                                                      {editLeague && (
+                                                            <button className='secondaryButton w-[44%]!' onClick={() => clearLeague()}>
+                                                                  Cancel
+                                                            </button>
+                                                      )}
+
+                                                      <button className='button disabled:opacity-50' onClick={editLeague ? handleSaveEdit : handleCreateLeague} disabled={isLoading}>
+                                                            {editLeague ? 'Update' : isLoading ? 'Creating...' : 'Create League'}
                                                       </button>
-                                                )}
-
-                                                <button className='button disabled:opacity-50' onClick={editLeague ? handleSaveEdit : handleCreateLeague} disabled={isLoading}>
-                                                      {editLeague ? 'Update' : isLoading ? 'Creating...' : 'Create League'}
-                                                </button>
+                                                </div>
                                           </div>
-                                    </div>
                                     )}
 
                                     {/* Prawy panel */}
@@ -280,55 +285,55 @@ function LeagueManagementPage() {
                                                 <div className='flex flex-1 flex-col'>
                                                       {/* Header z napisem i searchbarem */}
                                                       <div className='flex shrink-0 flex-col items-center justify-between lg:mb-4 lg:flex-row'>
-                                                      <h2 className='order-1 pt-4 text-2xl font-bold lg:order-first lg:pt-0'>Your Leagues</h2>
-                                                      <div className='relative w-full max-w-sm items-center'>
-                                                            <label htmlFor='my-league-search' className='sr-only'>
-                                                                  Search your leagues
-                                                            </label>
-                                                            <FontAwesomeIcon icon={faMagnifyingGlass} className={'text-quiz-white absolute top-1/2 left-3 -translate-y-1/2'} />
-                                                            <input
-                                                                  id='my-league-search'
-                                                                  type='text'
-                                                                  value={myQuery}
-                                                                  onChange={(e) => setMyQuery(e.target.value)}
-                                                                  placeholder='Search your leagues...'
-                                                                  className='border-box input placeholder:text-quiz-white w-full pl-10!'
-                                                            />
+                                                            <h2 className='order-1 pt-4 text-2xl font-bold lg:order-first lg:pt-0'>Your Leagues</h2>
+                                                            <div className='relative w-full max-w-sm items-center'>
+                                                                  <label htmlFor='my-league-search' className='sr-only'>
+                                                                        Search your leagues
+                                                                  </label>
+                                                                  <FontAwesomeIcon icon={faMagnifyingGlass} className={'text-quiz-white absolute top-1/2 left-3 -translate-y-1/2'} />
+                                                                  <input
+                                                                        id='my-league-search'
+                                                                        type='text'
+                                                                        value={myQuery}
+                                                                        onChange={(e) => setMyQuery(e.target.value)}
+                                                                        placeholder='Search your leagues...'
+                                                                        className='border-box input placeholder:text-quiz-white w-full pl-10!'
+                                                                  />
+                                                            </div>
                                                       </div>
-                                                </div>
 
-                                                {/* Lista lig z przewijaniem */}
-                                                <div className='relative h-full w-full flex-1'>
-                                                      <div className='lg:scrollbar inset-0 pe-2 lg:absolute lg:overflow-auto'>
-                                                            {filteredMyLeagues.map((league) => (
-                                                                  <div
-                                                                        key={league.league_id}
-                                                                        className='bg-quiz-white border-s-quiz-dark-green mt-2 flex w-full items-center justify-between rounded-lg border border-s-16 p-4 lg:border-none'
-                                                                  >
-                                                                        <NavLink to={`${league.league_id}/quizzes`}>
-                                                                              <div className='text-2xl'>{league.league_name}</div>
-                                                                              <div className='text-quiz-light-green text-sm'>{league.description}</div>
-                                                                        </NavLink>
+                                                      {/* Lista lig z przewijaniem */}
+                                                      <div className='relative h-full w-full flex-1'>
+                                                            <div className='lg:scrollbar inset-0 pe-2 lg:absolute lg:overflow-auto'>
+                                                                  {filteredMyLeagues.map((league) => (
+                                                                        <div
+                                                                              key={league.league_id}
+                                                                              className='bg-quiz-white border-s-quiz-dark-green mt-2 flex w-full items-center justify-between rounded-lg border border-s-16 p-4 lg:border-none'
+                                                                        >
+                                                                              <NavLink to={`${league.league_id}/quizzes`}>
+                                                                                    <div className='text-2xl'>{league.league_name}</div>
+                                                                                    <div className='text-quiz-light-green text-sm'>{league.description}</div>
+                                                                              </NavLink>
 
-                                                                        <div className='flex flex-col items-center gap-2 lg:flex-row'>
-                                                                              <button className='button lg:w-30!' onClick={() => startLeagueEditing(league)}>
-                                                                                    EDIT
-                                                                              </button>
-                                                                              <button className='secondaryButton lg:w-30!' onClick={() => handleDeleteLeague(league.league_id)}>
-                                                                                    DELETE
-                                                                              </button>
+                                                                              <div className='flex flex-col items-center gap-2 lg:flex-row'>
+                                                                                    <button className='button lg:w-30!' onClick={() => startLeagueEditing(league)}>
+                                                                                          EDIT
+                                                                                    </button>
+                                                                                    <button className='secondaryButton lg:w-30!' onClick={() => handleDeleteLeague(league.league_id)}>
+                                                                                          DELETE
+                                                                                    </button>
+                                                                              </div>
                                                                         </div>
-                                                                  </div>
-                                                            ))}
-                                                            {filteredMyLeagues.length === 0 && (
-                                                                  <NoContent
-                                                                        title={myLeaguesData.length === 0 ? 'No leagues yet' : 'No leagues found'}
-                                                                        description={myLeaguesData.length === 0 ? 'It looks like there are no leagues.' : 'Change your search criteria'}
-                                                                  ></NoContent>
-                                                            )}
+                                                                  ))}
+                                                                  {filteredMyLeagues.length === 0 && (
+                                                                        <NoContent
+                                                                              title={myLeaguesData.length === 0 ? 'No leagues yet' : 'No leagues found'}
+                                                                              description={myLeaguesData.length === 0 ? 'It looks like there are no leagues.' : 'Change your search criteria'}
+                                                                        ></NoContent>
+                                                                  )}
+                                                            </div>
                                                       </div>
                                                 </div>
-                                          </div>
                                           )}
 
                                           {/* Sekcja 2: Ligi publiczne */}

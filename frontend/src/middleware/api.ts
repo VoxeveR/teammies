@@ -13,8 +13,8 @@ const instance = axios.create({
 
 instance.interceptors.request.use(
       (config) => {
-            const accessToken = sessionStorage.getItem('access_token');
-            const tokenType = sessionStorage.getItem('access_token_type');
+            const accessToken = localStorage.getItem('access_token');
+            const tokenType = localStorage.getItem('access_token_type');
 
             if (accessToken && tokenType) {
                   config.headers['Authorization'] = `${tokenType} ${accessToken}`;
@@ -86,8 +86,8 @@ instance.interceptors.response.use(
                               headers: { 'Content-Type': 'application/json' },
                         });
 
-                        sessionStorage.setItem('access_token', r.data.access_token);
-                        sessionStorage.setItem('access_token_type', r.data.access_token_type);
+                        localStorage.setItem('access_token', r.data.access_token);
+                        localStorage.setItem('access_token_type', r.data.access_token_type);
 
                         notifySubscribers();
                         originalConfig.__isRetryRequest = true;

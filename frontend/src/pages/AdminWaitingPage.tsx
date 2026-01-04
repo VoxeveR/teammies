@@ -36,8 +36,14 @@ function AdminWaitingPage() {
       useEffect(() => {
             if (!params.sessionCode) return;
 
+            const token = localStorage.getItem('access_token');
+            const tokenType = localStorage.getItem('access_token_type');
+
             const stompClient = new StompJs.Client({
                   brokerURL: 'ws://localhost:8080/ws-quiz',
+                  connectHeaders: {
+                        Authorization: token ? `${tokenType} ${token}` : '',
+                  },
                   onConnect: () => {
                         console.log('Connected to WebSocket');
 
@@ -87,7 +93,6 @@ function AdminWaitingPage() {
                               }
                         });
 
-                        // Subscribe to quiz results
                         stompClient.subscribe(`/topic/quiz-session/${params.sessionCode}/results`, (message) => {
                               try {
                                     const results = JSON.parse(message.body);

@@ -5,12 +5,12 @@ import java.util.List;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import com.voxever.teammies.dto.quiz.websocket.QuizResultDto;
 import com.voxever.teammies.dto.quiz.events.PlayerJoinedEventDto;
 import com.voxever.teammies.dto.quiz.events.QuestionEventDto;
 import com.voxever.teammies.dto.quiz.events.QuizEventType;
 import com.voxever.teammies.dto.quiz.events.TeamJoinedEventDto;
 import com.voxever.teammies.dto.quiz.websocket.FinalTeamAnswerDto;
+import com.voxever.teammies.dto.quiz.websocket.QuizResultDto;
 import com.voxever.teammies.entity.QuizPlayer;
 import com.voxever.teammies.entity.QuizTeam;
 
@@ -113,13 +113,11 @@ public class QuizSessionWebSocketBroadcasts {
                 .eventType(QuizEventType.SESSION_CLOSED)
                 .build();
 
-        // Broadcast to all members in the session
         messagingTemplate.convertAndSend(
                 "/topic/quiz-session/" + sessionJoinCode + "/events",
                 event
         );
-
-        // Also broadcast to admin
+        
         messagingTemplate.convertAndSend(
                 "/topic/quiz-session/" + sessionJoinCode + "/admin/events",
                 event

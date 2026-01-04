@@ -428,8 +428,8 @@ public class QuizSessionService {
         String decisionMethod;
 
         if (voteCount.isEmpty()) {
-            // No votes cast - set answer to null with RANDOM method
-            finalAnswer = null;
+            // No votes cast - set answer to empty string with RANDOM method
+            finalAnswer = "";
             finalAnswerIndex = -1;
             decisionMethod = "RANDOM";
         } else {
@@ -449,14 +449,14 @@ public class QuizSessionService {
             if (tieCount == 1) {
                 // Clear winner by majority
                 finalAnswer = topAnswer;
-                finalAnswerIndex = indexMap.getOrDefault(topAnswer, -1);
+                finalAnswerIndex = indexMap.get(topAnswer);
                 decisionMethod = "MAJORITY";
             } else {
                 // Tie detected - need captain or random
                 if (captain != null && captainAnswer != null) {
                     // Captain breaks the tie
                     finalAnswer = captainAnswer;
-                    finalAnswerIndex = captainAnswerIndex != null ? captainAnswerIndex : -1;
+                    finalAnswerIndex = captainAnswerIndex;
                     decisionMethod = "CAPTAIN_DECISION";
                 } else {
                     // Random selection among tied answers
@@ -466,7 +466,7 @@ public class QuizSessionService {
                             .collect(Collectors.toList());
 
                     finalAnswer = tiedAnswers.get(random.nextInt(tiedAnswers.size()));
-                    finalAnswerIndex = indexMap.getOrDefault(finalAnswer, -1);
+                    finalAnswerIndex = indexMap.get(finalAnswer);
                     decisionMethod = "RANDOM";
                 }
             }

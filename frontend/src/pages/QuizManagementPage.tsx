@@ -74,7 +74,6 @@ function QuizManagementPage() {
                               toast.error('Failed to load league');
                         }
 
-                        // Optionally redirect back to /leagues
                         navigate('/leagues');
                   } finally {
                         setLoading(false);
@@ -86,9 +85,9 @@ function QuizManagementPage() {
 
       // Helper to extract user ID from JWT token in session storage
       const getUserIdFromToken = (): number | null => {
-            const token = sessionStorage.getItem('access_token');
+            const token = localStorage.getItem('access_token');
             if (!token) return null;
-            
+
             try {
                   const payload = JSON.parse(atob(token.split('.')[1]));
                   // JWT stores userId in 'sub' (subject) field
@@ -202,10 +201,14 @@ function QuizManagementPage() {
                                                                         date: '—',
                                                                         status: q.published ? 'Live' : 'Upcoming',
                                                                   }))}
-                                                                  onQuizClick={isOwner ? (quiz: Quiz & { id: number }) => {
-                                                                        const backendQuiz = quizzes.find((q) => q.id === quiz.id);
-                                                                        if (backendQuiz) setEditingQuiz(backendQuiz);
-                                                                  } : undefined}
+                                                                  onQuizClick={
+                                                                        isOwner
+                                                                              ? (quiz: Quiz & { id: number }) => {
+                                                                                      const backendQuiz = quizzes.find((q) => q.id === quiz.id);
+                                                                                      if (backendQuiz) setEditingQuiz(backendQuiz);
+                                                                                }
+                                                                              : undefined
+                                                                  }
                                                                   onStartQuiz={isOwner ? (quiz: Quiz & { id: number }) => handleStart(quiz.id) : undefined}
                                                                   onDeleteQuiz={isOwner ? (quiz: Quiz & { id: number }) => handleDeleteQuiz(quiz) : undefined}
                                                             />

@@ -37,7 +37,7 @@ const STORAGE_KEY = 'QUIZ_SESSION_DATA';
 
 export function useQuizSessionData() {
       const [quizData, setQuizData] = useState<QuizSessionData>(() => {
-            const stored = sessionStorage.getItem(STORAGE_KEY);
+            const stored = localStorage.getItem(STORAGE_KEY);
             if (stored) {
                   const parsed = JSON.parse(stored);
                   return {
@@ -60,7 +60,7 @@ export function useQuizSessionData() {
       });
 
       useEffect(() => {
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(quizData));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(quizData));
       }, [quizData]);
 
       const updateTeam = (data: { teamId: number; teamName: string; teamJoinCode: string }) => {
@@ -89,7 +89,7 @@ export function useQuizSessionData() {
       };
 
       const resetQuiz = () => {
-            sessionStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(STORAGE_KEY);
             setQuizData({
                   quizSessionId: null,
                   sessionJoinCode: null,
