@@ -7,7 +7,6 @@ import toast from 'react-hot-toast';
 import NoContent from '../components/management/NoContent';
 import { NavLink } from 'react-router-dom';
 import DatepickerWrapper from '../components/management/DatepickerWrapper';
-import useSessionStorage from '../hooks/useSessionStorage';
 
 interface League {
       league_id: number;
