@@ -30,7 +30,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }, []);
 
       useEffect(() => {
-            // Try to restore auth using refresh token cookie (HttpOnly) after page reload.
             async function tryRefreshOnLoad() {
                   try {
                         const r = await axios.post(

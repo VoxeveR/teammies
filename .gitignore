@@ -1,0 +1,8 @@
+# Local secrets (do NOT commit)
+backend/secrets.properties
+
+# Common local artifacts
+**/target/
+**/node_modules/
+**/dist/
+**/*.log
