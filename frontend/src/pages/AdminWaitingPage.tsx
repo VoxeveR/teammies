@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 
 import * as StompJs from '@stomp/stompjs';
 import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
 
 interface Team {
       teamId: number;
@@ -23,6 +24,7 @@ interface Player {
 function AdminWaitingPage() {
       const params = useParams();
       const navigate = useNavigate();
+      const auth = useAuth();
       const [sessionTeams, setSessionTeams] = useState<Team[]>([]);
       const [isQuizRunning, setIsQuizRunning] = useState(false);
       const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
@@ -36,13 +38,10 @@ function AdminWaitingPage() {
       useEffect(() => {
             if (!params.sessionCode) return;
 
-            const token = localStorage.getItem('access_token');
-            const tokenType = localStorage.getItem('access_token_type');
-
             const stompClient = new StompJs.Client({
                   brokerURL: 'ws://localhost:8080/ws-quiz',
                   connectHeaders: {
-                        Authorization: token ? `${tokenType} ${token}` : '',
+                        Authorization: auth.accessToken ? `Bearer ${auth.accessToken}` : '',
                   },
                   onConnect: () => {
                         console.log('Connected to WebSocket');
@@ -152,7 +151,7 @@ function AdminWaitingPage() {
                         stompClientRef.current.deactivate();
                   }
             };
-      }, [params.sessionCode]);
+      }, [params.sessionCode, auth.accessToken]);
 
       // Load initial teams on mount
       useEffect(() => {

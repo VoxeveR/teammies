@@ -81,6 +81,10 @@ public class RefreshTokenService {
     public RefreshToken rotateRefreshToken(String rawToken) {
         Logger log = LoggerFactory.getLogger(getClass());
 
+        if (rawToken == null || rawToken.length() < PREFIX_LENGTH) {
+            throw new RuntimeException("Token doesn't exist!");
+        }
+
         log.debug("Rotating refresh token, rawToken prefix: {}", rawToken.substring(0, PREFIX_LENGTH));
 
         RefreshToken oldRefreshToken = findByPrefixForUpdate(rawToken); // użycie blokady pesymistycznej
@@ -88,7 +92,13 @@ public class RefreshTokenService {
 
         User tokenOwner = oldRefreshToken.getUser();
 
-        verifyExpirationDate(oldRefreshToken);
+        try {
+            verifyExpirationDate(oldRefreshToken);
+        } catch (RuntimeException ex) {
+            refreshTokenRepository.delete(oldRefreshToken);
+            refreshTokenRepository.flush();
+            throw ex;
+        }
         log.debug("Refresh token {} is valid, proceeding to delete", oldRefreshToken.getKeyId());
 
         refreshTokenRepository.delete(oldRefreshToken);

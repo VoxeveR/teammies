@@ -1,9 +1,11 @@
-import { createContext, useState, useContext } from 'react';
+import { createContext, useEffect, useState, useContext } from 'react';
 import axios from 'axios';
-import { setLogoutHandler } from '../middleware/api';
+import { setLogoutHandler, setTokenUpdateHandler } from '../middleware/api';
+import { clearAuthTokens, setAuthTokens } from '../middleware/tokenStore';
 
 interface AuthContextType {
       accessToken: string;
+      accessTokenType: string;
       setAccessToken: (token: string) => void;
       login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
       register: (email: string, username: string, password: string) => Promise<{ success: boolean; message?: string }>;
@@ -14,12 +16,44 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-      const [accessToken, setAccessToken] = useState(() => {
-            return localStorage.getItem('access_token') || '';
-      });
-      const [isAuthenticated, setIsAuthenticated] = useState(() => {
-            return !!localStorage.getItem('access_token');
-      });
+      const [accessToken, setAccessToken] = useState('');
+      const [accessTokenType, setAccessTokenType] = useState('Bearer');
+      const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+      useEffect(() => {
+            setLogoutHandler(logout);
+            setTokenUpdateHandler((nextToken, nextType) => {
+                  setAccessToken(nextToken);
+                  setAccessTokenType(nextType);
+                  setIsAuthenticated(!!nextToken);
+            });
+      }, []);
+
+      useEffect(() => {
+            // Try to restore auth using refresh token cookie (HttpOnly) after page reload.
+            async function tryRefreshOnLoad() {
+                  try {
+                        const r = await axios.post(
+                              'http://localhost:8080/api/auth/refreshToken',
+                              null,
+                              { withCredentials: true }
+                        );
+
+                        if (r?.data?.access_token) {
+                              const nextToken = r.data.access_token as string;
+                              const nextType = (r.data.access_token_type as string) || 'Bearer';
+                              setAuthTokens(nextToken, nextType);
+                              setAccessToken(nextToken);
+                              setAccessTokenType(nextType);
+                              setIsAuthenticated(true);
+                        }
+                  } catch {
+                        // No refresh cookie / expired / not logged in -> stay unauthenticated.
+                  }
+            }
+
+            tryRefreshOnLoad();
+      }, []);
 
       async function login(email: string, password: string): Promise<{ success: boolean; message?: string }> {
             return axios
@@ -36,10 +70,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   .then((response) => {
                         if (response.status === 200) {
                               const accessToken = response.data.access_token;
-                              localStorage.setItem('access_token', accessToken);
-                              localStorage.setItem('access_token_type', response.data.access_token_type);
-                              localStorage.setItem('isAuthenticated', 'true');
+                              const tokenType = response.data.access_token_type || 'Bearer';
+                              setAuthTokens(accessToken, tokenType);
                               setAccessToken(accessToken);
+                              setAccessTokenType(tokenType);
                               setIsAuthenticated(true);
                               return { success: true };
                         } else return { success: false, message: 'Login failed!' };
@@ -105,17 +139,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   console.log('Server logout failed, clearing client anyway.');
             }
 
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('access_token_type');
-            localStorage.removeItem('isAuthenticated');
+            clearAuthTokens();
 
             setAccessToken('');
+            setAccessTokenType('Bearer');
             setIsAuthenticated(false);
       }
 
-      setLogoutHandler(logout);
-
-      return <AuthContext.Provider value={{ accessToken, setAccessToken, login, register, isAuthenticated, logout }}>{children}</AuthContext.Provider>;
+      return <AuthContext.Provider value={{ accessToken, accessTokenType, setAccessToken, login, register, isAuthenticated, logout }}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
