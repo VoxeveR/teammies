@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,7 +27,9 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "quiz_players")
+@Table(name = "quiz_players", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_quiz_player_nickname_per_session", columnNames = {"nickname", "quiz_session_id"})
+})
 public class QuizPlayer {
 
     @Id
@@ -43,6 +46,10 @@ public class QuizPlayer {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id", nullable = true)
     private QuizTeam team;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "quiz_session_id", nullable = true)
+    private QuizSession quizSession;
 
     @Column(name = "current_question_id", nullable = true)
     private Long currentQuestionId;

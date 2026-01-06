@@ -6,6 +6,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.voxever.teammies.dto.quiz.events.PlayerJoinedEventDto;
+import com.voxever.teammies.dto.quiz.events.PlayerLeftEventDto;
 import com.voxever.teammies.dto.quiz.events.QuestionEventDto;
 import com.voxever.teammies.dto.quiz.events.QuizEventType;
 import com.voxever.teammies.dto.quiz.events.TeamJoinedEventDto;
@@ -60,6 +61,47 @@ public class QuizSessionWebSocketBroadcasts {
                 "/topic/quiz-session/" + sessionJoinCode + "/admin/events",
                 event
         );
+    }
+
+    public void broadcastPlayerLeft(String sessionJoinCode, QuizTeam team, QuizPlayer leftPlayer, 
+                                    QuizPlayer newCaptain, boolean teamDeleted) {
+        log.info("=== BROADCASTING PLAYER LEFT ===");
+        log.info("Broadcasting player left: {} from team: {} for session: {}", 
+                leftPlayer.getNickname(), team.getName(), sessionJoinCode);
+        log.info("Team deleted: {}", teamDeleted);
+        log.info("New captain: {}", newCaptain != null ? newCaptain.getNickname() : "NONE");
+        
+        PlayerLeftEventDto event = PlayerLeftEventDto.builder()
+                .playerId(leftPlayer.getId())
+                .playerUsername(leftPlayer.getNickname())
+                .teamId(team.getId())
+                .teamName(team.getName())
+                .newCaptainId(newCaptain != null ? newCaptain.getId() : null)
+                .newCaptainUsername(newCaptain != null ? newCaptain.getNickname() : null)
+                .teamDeleted(teamDeleted)
+                .eventType(QuizEventType.PLAYER_LEFT)
+                .build();
+
+        log.info("Sending to admin channel: /topic/quiz-session/{}/admin/events", sessionJoinCode);
+        // Broadcast to admin
+        messagingTemplate.convertAndSend(
+                "/topic/quiz-session/" + sessionJoinCode + "/admin/events",
+                event
+        );
+        log.info("Admin broadcast sent");
+
+        // Broadcast to team members (if team still exists)
+        if (!teamDeleted) {
+            String teamChannelTopic = "/topic/quiz-session/" + sessionJoinCode + "/team/" + team.getJoinCode() + "/events";
+            log.info("Sending to team channel: {}", teamChannelTopic);
+            messagingTemplate.convertAndSend(
+                    teamChannelTopic,
+                    event
+            );
+            log.info("Team broadcast sent");
+        } else {
+            log.info("Team was deleted, skipping team broadcast");
+        }
     }
 
     public void broadcastQuizStarted(String sessionJoinCode, QuestionEventDto firstQuestion) {

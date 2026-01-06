@@ -25,6 +25,7 @@ import com.voxever.teammies.dto.quiz.rest.StartQuizResponseDto;
 import com.voxever.teammies.dto.quiz.rest.TeamWithPlayersDto;
 import com.voxever.teammies.dto.quiz.websocket.FinalTeamAnswerDto;
 import com.voxever.teammies.dto.quiz.websocket.QuizResultDto;
+import com.voxever.teammies.entity.AnswerOption;
 import com.voxever.teammies.entity.League;
 import com.voxever.teammies.entity.LeagueStanding;
 import com.voxever.teammies.entity.Question;
@@ -336,12 +337,18 @@ public class QuizSessionService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quiz session is not available for joining");
         }
 
+        // Check if nickname is already taken in this session
+        if (quizPlayerRepository.findByNicknameAndSessionId(request.getUsername(), session.getId()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Nickname already taken");
+        }
+
         Quiz quiz = session.getQuiz();
         List<QuizTeam> teams = quizTeamRepository.findByQuizSessionId(session.getId());
 
         QuizPlayer tempPlayer = QuizPlayer.builder()
                 .nickname(request.getUsername())
                 .isCaptain(false)
+                .quizSession(session)
                 .build();
         QuizPlayer savedPlayer = quizPlayerRepository.save(tempPlayer);
 
@@ -383,16 +390,47 @@ public class QuizSessionService {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Question not found"));
 
+        // Get correct answer from AnswerOption
+// Get all answer options for this question (sorted by position)
+        List<AnswerOption> answerOptions = question.getAnswerOptions().stream()
+                .sorted(Comparator.comparingInt(AnswerOption::getPosition))
+                .collect(Collectors.toList());
+
+        // Create a map from answer text to its index (0-based)
+        Map<String, Integer> answerTextToIndex = new HashMap<>();
+        for (int i = 0; i < answerOptions.size(); i++) {
+            answerTextToIndex.put(answerOptions.get(i).getText(), i);
+        }
+
+        String correctAnswer = question.getAnswerOptions().stream()
+                .filter(AnswerOption::getCorrect)
+                .map(AnswerOption::getText)
+                .findFirst()
+                .orElse("");
+
+        // Get correct answer index using the answerTextToIndex map (0-based)
+        Integer correctAnswerIndex = answerTextToIndex.containsKey(correctAnswer) 
+                ? answerTextToIndex.get(correctAnswer) 
+                : -1;
+
         // Get all players in the team
         Set<QuizPlayer> players = team.getPlayers();
 
+        // If team has no players (all disconnected), return empty answer
         if (players == null || players.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Team has no players");
+            return FinalTeamAnswerDto.builder()
+                    .teamId(teamId)
+                    .questionId(questionId)
+                    .finalAnswer("")
+                    .finalAnswerIndex(-1)
+                    .correctAnswer(correctAnswer)
+                    .correctAnswerIndex(correctAnswerIndex)
+                    .isCorrect(false)
+                    .build();
         }
 
-        // Count votes for each answer option from player highlights (selections)
+        // Count votes for each answer option from player selections
         Map<String, Integer> voteCount = new HashMap<>();
-        Map<String, Integer> indexMap = new HashMap<>();
         QuizPlayer captain = null;
         String captainAnswer = null;
         Integer captainAnswerIndex = null;
@@ -405,9 +443,6 @@ public class QuizSessionService {
                 
                 String answer = player.getCurrentHighlight();
                 voteCount.put(answer, voteCount.getOrDefault(answer, 0) + 1);
-                if (player.getCurrentHighlightIndex() != null) {
-                    indexMap.put(answer, player.getCurrentHighlightIndex());
-                }
             }
 
             if (player.isCaptain()) {
@@ -417,7 +452,7 @@ public class QuizSessionService {
                     player.getCurrentQuestionId().equals(questionId) &&
                     player.getCurrentHighlight() != null) {
                     captainAnswer = player.getCurrentHighlight();
-                    captainAnswerIndex = player.getCurrentHighlightIndex();
+                    captainAnswerIndex = answerTextToIndex.getOrDefault(captainAnswer, -1);
                 }
             }
         }
@@ -449,14 +484,14 @@ public class QuizSessionService {
             if (tieCount == 1) {
                 // Clear winner by majority
                 finalAnswer = topAnswer;
-                finalAnswerIndex = indexMap.get(topAnswer);
+                finalAnswerIndex = answerTextToIndex.getOrDefault(finalAnswer, -1);
                 decisionMethod = "MAJORITY";
             } else {
                 // Tie detected - need captain or random
                 if (captain != null && captainAnswer != null) {
                     // Captain breaks the tie
                     finalAnswer = captainAnswer;
-                    finalAnswerIndex = captainAnswerIndex;
+                    finalAnswerIndex = answerTextToIndex.getOrDefault(finalAnswer, -1);
                     decisionMethod = "CAPTAIN_DECISION";
                 } else {
                     // Random selection among tied answers
@@ -466,7 +501,7 @@ public class QuizSessionService {
                             .collect(Collectors.toList());
 
                     finalAnswer = tiedAnswers.get(random.nextInt(tiedAnswers.size()));
-                    finalAnswerIndex = indexMap.get(finalAnswer);
+                    finalAnswerIndex = answerTextToIndex.getOrDefault(finalAnswer, -1);
                     decisionMethod = "RANDOM";
                 }
             }
@@ -483,10 +518,18 @@ public class QuizSessionService {
 
         teamAnswerRepository.save(teamAnswer);
 
-        // Get the correct answer from the question and build response DTO
-        FinalTeamAnswerDto finalTeamAnswerDto = finalAnswerMapper.mapToFinalTeamAnswerDto(
-                teamId, team.getName(), questionId, finalAnswer, finalAnswerIndex, question, decisionMethod
-        );
+        // Build response DTO with correct answer
+        FinalTeamAnswerDto finalTeamAnswerDto = FinalTeamAnswerDto.builder()
+                .teamId(teamId)
+                .teamName(team.getName())
+                .questionId(questionId)
+                .finalAnswer(finalAnswer)
+                .finalAnswerIndex(finalAnswerIndex)
+                .correctAnswer(correctAnswer)
+                .correctAnswerIndex(correctAnswerIndex)
+                .isCorrect(finalAnswer.equals(correctAnswer))
+                .decisionMethod(decisionMethod)
+                .build();
 
         return finalTeamAnswerDto;
     }

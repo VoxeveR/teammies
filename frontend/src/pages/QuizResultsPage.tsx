@@ -39,7 +39,7 @@ function QuizResultsPage() {
       };
 
       return (
-            <div className='flex h-screen w-full flex-col items-center justify-center bg-gradient-to-b from-[#0a4a4d] to-[#1CABB0] p-4'>
+            <div className='flex h-screen w-full flex-col items-center justify-center p-4'>
                   <div className='w-full max-w-2xl'>
                         <h1 className='mb-2 text-center text-4xl font-bold text-white md:text-5xl'>Quiz Results</h1>
                         <p className='mb-8 text-center text-lg text-gray-100'>Session: {params.sessionCode}</p>

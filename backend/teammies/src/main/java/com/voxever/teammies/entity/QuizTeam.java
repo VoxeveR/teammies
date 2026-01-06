@@ -17,6 +17,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -29,7 +30,9 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "quiz_teams")
+@Table(name = "quiz_teams", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_quiz_team_name_per_session", columnNames = {"name", "quiz_session_id"})
+})
 public class QuizTeam {
 
     @Id
