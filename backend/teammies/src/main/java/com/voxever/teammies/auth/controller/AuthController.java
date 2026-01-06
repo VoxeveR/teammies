@@ -30,8 +30,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> revokeToken(HttpServletRequest request) {
-        return authService.revokeToken(request);
+    public ResponseEntity<Void> revokeToken(HttpServletRequest request, HttpServletResponse response) {
+        return authService.revokeToken(request, response);
     }
 
     @PostMapping("/refreshToken")

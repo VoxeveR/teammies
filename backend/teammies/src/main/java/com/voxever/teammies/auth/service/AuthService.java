@@ -12,7 +12,6 @@ import com.voxever.teammies.entity.User;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -22,11 +21,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class AuthService {
@@ -116,7 +113,7 @@ public class AuthService {
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .sameSite("None")
+                .sameSite("Strict")
                 .maxAge(maxAgeSeconds)
                 .build();
 
@@ -139,7 +136,21 @@ public class AuthService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        RefreshToken newRefreshToken = refreshTokenService.rotateRefreshToken(refreshTokenCookie.get().getValue());
+        RefreshToken newRefreshToken;
+        try {
+            newRefreshToken = refreshTokenService.rotateRefreshToken(refreshTokenCookie.get().getValue());
+        } catch (RuntimeException ex) {
+            ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+                    .httpOnly(true)
+                    .secure(true)
+                    .path("/")
+                    .sameSite("Strict")
+                    .maxAge(0)
+                    .build();
+
+            response.addHeader("Set-Cookie", cookie.toString());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         String jwtToken = jwtService.generateToken(newRefreshToken.getUser().getUserId());
 
         long maxAgeSeconds = (newRefreshToken.getExpiresAt().toEpochMilli() - System.currentTimeMillis()) / 1000;
@@ -148,7 +159,7 @@ public class AuthService {
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
-                .sameSite("None")
+                .sameSite("Strict")
                 .maxAge(maxAgeSeconds)
                 .build();
 
@@ -163,7 +174,7 @@ public class AuthService {
     }
 
 
-    public ResponseEntity<Void> revokeToken(HttpServletRequest servletRequest) {
+    public ResponseEntity<Void> revokeToken(HttpServletRequest servletRequest, HttpServletResponse response) {
 
         Optional<Cookie> refreshTokenCookie = findRefreshTokenCookie(servletRequest.getCookies());
 
@@ -172,6 +183,16 @@ public class AuthService {
         }
 
         refreshTokenService.findAndDelete(refreshTokenCookie.get().getValue());
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("Strict")
+                .maxAge(0)
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
 
         return ResponseEntity.ok().build();
     }

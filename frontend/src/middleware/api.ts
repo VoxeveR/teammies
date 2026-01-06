@@ -19,7 +19,6 @@ instance.interceptors.request.use(
             if (accessToken && tokenType) {
                   config.headers['Authorization'] = `${tokenType} ${accessToken}`;
             }
-            console.log(config);
             return config;
       },
       (error) => {
