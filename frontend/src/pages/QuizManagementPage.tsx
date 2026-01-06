@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '../components/general/Navbar';
 import ModalWithForm from '../components/management/ModalWithForm';
@@ -8,6 +8,7 @@ import api from '../middleware/api';
 import toast from 'react-hot-toast';
 import type { Quiz } from '../components/management/QuizList';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 interface BackendQuiz {
       id: number;
@@ -16,7 +17,14 @@ interface BackendQuiz {
       description: string;
       published: boolean;
       createdByUsername: string;
-      questions?: any[];
+      questions?: unknown[];
+}
+
+function getAxiosStatus(error: unknown): number | undefined {
+      if (typeof error !== 'object' || error === null) return undefined;
+      if (!('response' in error)) return undefined;
+      const maybe = error as { response?: { status?: number } };
+      return maybe.response?.status;
 }
 
 interface League {
@@ -36,6 +44,7 @@ const medals = ['🥇', '🥈', '🥉'];
 
 function QuizManagementPage() {
       const { leagueId } = useParams();
+      const auth = useAuth();
 
       const [leagueName, setLeagueName] = useState<string>('');
       const [isOwner, setIsOwner] = useState<boolean>(false);
@@ -44,6 +53,21 @@ function QuizManagementPage() {
       const [quizzes, setQuizzes] = useState<BackendQuiz[]>([]);
       const [loading, setLoading] = useState(true);
       const [editingQuiz, setEditingQuiz] = useState<BackendQuiz | null>(null);
+
+      // Helper to extract user ID from JWT token
+      const getUserIdFromToken = useCallback((): number | null => {
+            const token = auth.accessToken;
+            if (!token) return null;
+
+            try {
+                  const payload = JSON.parse(atob(token.split('.')[1]));
+                  // JWT stores userId in 'sub' (subject) field
+                  return payload.sub ? parseInt(payload.sub, 10) : null;
+            } catch (e) {
+                  console.error('Failed to parse token:', e);
+                  return null;
+            }
+      }, [auth.accessToken]);
 
       useEffect(() => {
             if (!leagueId) return;
@@ -54,7 +78,6 @@ function QuizManagementPage() {
                         const leagueResp = await api.get<League>(`/leagues/${leagueId}`);
                         setLeagueName(leagueResp.data.league_name);
 
-                        // Get current user ID from session storage (stored during login)
                         const currentUserId = getUserIdFromToken();
                         const leagueOwnerId = leagueResp.data.owner_id;
                         setIsOwner(currentUserId === leagueOwnerId);
@@ -65,10 +88,11 @@ function QuizManagementPage() {
                         const rankingResp = await api.get<LeagueStanding[]>(`/leagues/${leagueId}/ranking`);
                         setStandings(rankingResp.data);
                         console.log(rankingResp.data);
-                  } catch (err: any) {
-                        if (err.response?.status === 404) {
+                  } catch (err: unknown) {
+                        const status = getAxiosStatus(err);
+                        if (status === 404) {
                               toast.error('League not found');
-                        } else if (err.response?.status === 403) {
+                        } else if (status === 403) {
                               toast.error('You do not have access to this league');
                         } else {
                               toast.error('Failed to load league');
@@ -81,22 +105,7 @@ function QuizManagementPage() {
             }
 
             fetchLeagueAndQuizzes();
-      }, [leagueId]);
-
-      // Helper to extract user ID from JWT token in session storage
-      const getUserIdFromToken = (): number | null => {
-            const token = localStorage.getItem('access_token');
-            if (!token) return null;
-
-            try {
-                  const payload = JSON.parse(atob(token.split('.')[1]));
-                  // JWT stores userId in 'sub' (subject) field
-                  return payload.sub ? parseInt(payload.sub, 10) : null;
-            } catch (e) {
-                  console.error('Failed to parse token:', e);
-                  return null;
-            }
-      };
+      }, [leagueId, getUserIdFromToken, navigate]);
 
       const handleStart = async (quizId: number) => {
             if (!leagueId) return;
@@ -113,7 +122,7 @@ function QuizManagementPage() {
             }
       };
 
-      const handleAddOrUpdateQuiz = async (payload: any, quizId?: number) => {
+      const handleAddOrUpdateQuiz = async (payload: Record<string, unknown>, quizId?: number) => {
             if (!leagueId) return;
 
             try {

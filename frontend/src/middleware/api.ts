@@ -1,4 +1,5 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
+import axios, { type AxiosRequestConfig } from 'axios';
+import { clearAuthTokens, getAccessToken, getAccessTokenType, setAuthTokens } from './tokenStore';
 
 const API_BASE = 'http://localhost:8080/api';
 const REFRESH_PATH = '/auth/refreshToken';
@@ -13,8 +14,8 @@ const instance = axios.create({
 
 instance.interceptors.request.use(
       (config) => {
-            const accessToken = localStorage.getItem('access_token');
-            const tokenType = localStorage.getItem('access_token_type');
+            const accessToken = getAccessToken();
+            const tokenType = getAccessTokenType();
 
             if (accessToken && tokenType) {
                   config.headers['Authorization'] = `${tokenType} ${accessToken}`;
@@ -35,9 +36,14 @@ type Subscriber = () => void;
 let subscribers: Subscriber[] = [];
 
 export let logoutHandler: (() => void) | null = null;
+export let tokenUpdateHandler: ((accessToken: string, accessTokenType: string) => void) | null = null;
 
 export function setLogoutHandler(fn: () => void) {
       logoutHandler = fn;
+}
+
+export function setTokenUpdateHandler(fn: (accessToken: string, accessTokenType: string) => void) {
+      tokenUpdateHandler = fn;
 }
 
 function addSubscriber(cb: Subscriber) {
@@ -68,7 +74,7 @@ instance.interceptors.response.use(
             if (response.status === 401 && !originalConfig.__isRetryRequest) {
                   // jeśli już ktoś robi refresh -> dołącz do kolejki i poczekaj
                   if (isRefreshing) {
-                        return new Promise((resolve, reject) => {
+                        return new Promise((resolve) => {
                               addSubscriber(() => {
                                     originalConfig.__isRetryRequest = true;
                                     // retry - instancja ma withCredentials: true więc cookie zostanie dołączone
@@ -85,8 +91,8 @@ instance.interceptors.response.use(
                               headers: { 'Content-Type': 'application/json' },
                         });
 
-                        localStorage.setItem('access_token', r.data.access_token);
-                        localStorage.setItem('access_token_type', r.data.access_token_type);
+                        setAuthTokens(r.data.access_token, r.data.access_token_type);
+                        if (tokenUpdateHandler) tokenUpdateHandler(r.data.access_token, r.data.access_token_type);
 
                         notifySubscribers();
                         originalConfig.__isRetryRequest = true;
@@ -95,6 +101,7 @@ instance.interceptors.response.use(
                         notifySubscribers();
 
                         //TODO: IMPLEMENT
+                        clearAuthTokens();
                         if (logoutHandler) logoutHandler();
 
                         return Promise.reject(refreshErr);

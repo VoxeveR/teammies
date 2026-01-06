@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import NoContent from '../components/management/NoContent';
 import { NavLink } from 'react-router-dom';
 import DatepickerWrapper from '../components/management/DatepickerWrapper';
+import { useAuth } from '../hooks/useAuth';
 
 interface League {
       league_id: number;
@@ -26,11 +27,12 @@ interface AllLeaguesResponse {
 }
 
 function LeagueManagementPage() {
+      const auth = useAuth();
       const [myQuery, setMyQuery] = useState('');
       const [publicQuery, setPublicQuery] = useState('');
       const [myLeaguesData, setMyLeaguesData] = useState<League[]>([]);
       const [publicLeaguesData, setPublicLeaguesData] = useState<League[]>([]);
-      const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+      const isAuthenticated = auth.isAuthenticated;
 
       //Form data
       const [leagueName, setLeagueName] = useState('');
@@ -47,9 +49,6 @@ function LeagueManagementPage() {
       const [editLeague, setEditLeague] = useState<League | null>(null);
 
       const fetchLeagues = () => {
-            const token = localStorage.getItem('access_token');
-            setIsAuthenticated(!!token);
-
             api.get<AllLeaguesResponse>('/leagues/')
                   .then((res) => {
                         setMyLeaguesData(res.data.my_leagues);
